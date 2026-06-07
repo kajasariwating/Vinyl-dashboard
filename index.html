@@ -1,1113 +1,193 @@
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vinyl Dashboard — Major9.nl</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700&display=swap" rel="stylesheet">
-<style>
-:root {
-  --bg:#0e0e0f; --bg2:#161618; --bg3:#1e1e21;
-  --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.14);
-  --text:#f0ede8; --muted:#7a7875;
-  --accent:#c8a96e; --accent2:#7f77dd;
-  --green:#4caf82; --red:#e05555; --amber:#e8a83a; --teal:#3ecfcf;
-  --font-head:'Syne',sans-serif; --font-mono:'DM Mono',monospace;
-}
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:var(--font-mono);font-size:13px;min-height:100vh;}
-.app{display:grid;grid-template-columns:230px 1fr;min-height:100vh;}
-.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:1.5rem 1.25rem;display:flex;flex-direction:column;gap:1.5rem;position:sticky;top:0;height:100vh;overflow-y:auto;}
-.main{padding:2rem;overflow-x:hidden;}
-.logo{display:flex;align-items:center;gap:10px;}
-.logo-icon{width:36px;height:36px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;}
-.logo-icon svg{width:20px;height:20px;fill:#0e0e0f;}
-.logo-text{font-family:var(--font-head);font-weight:700;font-size:15px;letter-spacing:-0.3px;}
-.logo-sub{font-size:10px;color:var(--muted);margin-top:1px;}
-.nav-label{font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:6px;padding-left:10px;}
-.nav{display:flex;flex-direction:column;gap:2px;}
-.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;cursor:pointer;color:var(--muted);transition:all 0.15s;border:none;background:none;font-family:var(--font-mono);font-size:12px;width:100%;text-align:left;}
-.nav-item:hover{background:var(--bg3);color:var(--text);}
-.nav-item.active{background:var(--bg3);color:var(--accent);border:1px solid rgba(200,169,110,0.2);}
-.nav-item svg{width:15px;height:15px;flex-shrink:0;}
-.period-group{display:flex;flex-direction:column;gap:2px;}
-.period-btn{padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);font-family:var(--font-mono);font-size:11px;cursor:pointer;text-align:left;transition:all 0.15s;}
-.period-btn:hover{border-color:var(--border2);color:var(--text);}
-.period-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(200,169,110,0.08);}
-.connect-section{padding-top:1rem;border-top:1px solid var(--border);}
-.connect-label{font-size:9px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:6px;}
-.badge-connected{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--green);margin-bottom:6px;}
-.badge-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-.badge-disconnected{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-bottom:6px;}
-.token-input{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;color:var(--text);font-family:var(--font-mono);font-size:11px;margin-bottom:5px;}
-.token-input:focus{outline:none;border-color:var(--accent);}
-.btn-connect{width:100%;padding:8px;background:var(--accent);color:#0e0e0f;border:none;border-radius:6px;font-family:var(--font-head);font-weight:600;font-size:12px;cursor:pointer;transition:opacity 0.15s;}
-.btn-connect:hover{opacity:0.85;}
-.btn-sm{padding:5px 10px;background:none;border:1px solid var(--border2);border-radius:6px;color:var(--muted);font-family:var(--font-mono);font-size:11px;cursor:pointer;margin-top:3px;width:100%;transition:all 0.15s;}
-.btn-sm:hover{color:var(--text);border-color:var(--border2);}
-.status-msg{font-size:10px;margin-top:5px;line-height:1.5;}
-.status-ok{color:var(--green);} .status-err{color:var(--red);} .status-loading{color:var(--accent);}
-.page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:1.5rem;}
-.page-title{font-family:var(--font-head);font-size:26px;font-weight:700;letter-spacing:-0.5px;}
-.page-sub{color:var(--muted);font-size:11px;margin-top:3px;}
-.last-sync{font-size:10px;color:var(--muted);}
-.metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:1.5rem;}
-.metric{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:1rem;}
-.metric-label{font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
-.metric-value{font-family:var(--font-head);font-size:20px;font-weight:700;letter-spacing:-0.5px;}
-.metric-sub{font-size:10px;color:var(--muted);margin-top:4px;}
-.metric-up{color:var(--green);} .metric-down{color:var(--red);}
-.charts-row{display:grid;grid-template-columns:1.4fr 1fr;gap:12px;margin-bottom:1.5rem;}
-.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:1.25rem;}
-.card-title{font-family:var(--font-head);font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
-.legend{display:flex;gap:12px;font-size:10px;color:var(--muted);flex-wrap:wrap;}
-.legend span{display:flex;align-items:center;gap:5px;}
-.legend-dot{width:8px;height:8px;border-radius:2px;}
-.section-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:1.5rem;}
-.table-controls{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
-.search-input{flex:1;min-width:150px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:7px 12px;color:var(--text);font-family:var(--font-mono);font-size:12px;}
-.search-input:focus{outline:none;border-color:var(--accent);}
-.filter-select{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;color:var(--text);font-family:var(--font-mono);font-size:12px;cursor:pointer;}
-.filter-select:focus{outline:none;border-color:var(--accent);}
-table{width:100%;border-collapse:collapse;}
-th{font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;padding:6px 10px;text-align:left;border-bottom:1px solid var(--border);font-weight:400;}
-td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--text);}
-tr:last-child td{border-bottom:none;}
-tr:hover td{background:var(--bg3);}
-.table-footer{font-size:10px;color:var(--muted);margin-top:10px;}
-.pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500;}
-.pg{background:rgba(76,175,130,0.15);color:var(--green);border:1px solid rgba(76,175,130,0.3);}
-.pa{background:rgba(232,168,58,0.15);color:var(--amber);border:1px solid rgba(232,168,58,0.3);}
-.pr{background:rgba(224,85,85,0.15);color:var(--red);border:1px solid rgba(224,85,85,0.3);}
-.pp{background:rgba(127,119,221,0.15);color:var(--accent2);border:1px solid rgba(127,119,221,0.3);}
-.pt{background:rgba(62,207,207,0.15);color:var(--teal);border:1px solid rgba(62,207,207,0.3);}
-.pgold{background:rgba(200,169,110,0.15);color:var(--accent);border:1px solid rgba(200,169,110,0.3);}
-.pgray{background:rgba(122,120,117,0.15);color:var(--muted);border:1px solid rgba(122,120,117,0.3);}
-.two-col{display:grid;grid-template-columns:1.5fr 1fr;gap:12px;margin-bottom:1.5rem;}
-.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:1.5rem;}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
-.fg label{display:block;font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;}
-.fg input,.fg select,.fg textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;color:var(--text);font-family:var(--font-mono);font-size:12px;}
-.fg input:focus,.fg select:focus{outline:none;border-color:var(--accent);}
-.fg.full{grid-column:1/-1;}
-.btn-add{grid-column:1/-1;padding:9px;background:var(--accent2);color:#fff;border:none;border-radius:6px;font-family:var(--font-head);font-weight:600;font-size:12px;cursor:pointer;transition:opacity 0.15s;}
-.btn-add:hover{opacity:0.85;}
-.btn-action{padding:6px 12px;background:none;border:1px solid var(--border2);border-radius:6px;color:var(--muted);font-family:var(--font-mono);font-size:11px;cursor:pointer;transition:all 0.15s;}
-.btn-action:hover{color:var(--text);border-color:var(--border2);}
-.tab-row{display:flex;gap:6px;margin-bottom:1.5rem;border-bottom:1px solid var(--border);padding-bottom:0;}
-.tab-btn{padding:8px 16px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:var(--font-mono);font-size:12px;cursor:pointer;margin-bottom:-1px;transition:all 0.15s;}
-.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
-.analyse-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem;}
-.trend-up{color:var(--green);} .trend-down{color:var(--red);} .trend-flat{color:var(--muted);}
-.rank-num{font-family:var(--font-head);font-size:18px;font-weight:700;color:var(--border2);width:30px;flex-shrink:0;}
-.rank-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
-.rank-row:last-child{border-bottom:none;}
-.insight-box{background:var(--bg3);border-radius:8px;padding:1rem;margin-bottom:8px;font-size:12px;line-height:1.6;}
-.insight-box strong{color:var(--accent);font-weight:500;}
-@media(max-width:900px){
-  .app{grid-template-columns:1fr;}
-  .sidebar{position:static;height:auto;}
-  .metrics{grid-template-columns:repeat(3,1fr);}
-  .charts-row,.two-col,.three-col,.analyse-grid{grid-template-columns:1fr;}
-}
-</style>
-</head>
-<body>
-<div class="app">
-<aside class="sidebar">
-  <div class="logo">
-    <div class="logo-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="#fff"/><circle cx="12" cy="12" r="1" fill="#c8a96e"/></svg></div>
-    <div><div class="logo-text">Major9.nl</div><div class="logo-sub">Vinyl Dashboard</div></div>
-  </div>
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const origin = request.headers.get('Origin') || '*';
 
-  <div>
-    <div class="nav-label">Navigatie</div>
-    <div class="nav">
-      <button class="nav-item active" onclick="showPage('dashboard',this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard
-      </button>
-      <button class="nav-item" onclick="showPage('voorraad',this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 3H8l-2 4h12l-2-4z"/></svg>Voorraad & collectie
-      </button>
-      <button class="nav-item" onclick="showPage('vinted',this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Vinted verkopen
-      </button>
-      <button class="nav-item" onclick="showPage('transacties',this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>Transacties
-      </button>
-      <button class="nav-item" onclick="showPage('analyse',this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analyse
-      </button>
-      <button class="nav-item" onclick="showPage('kosten',this)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>Kosten (e-Boekhouden)
-      </button>
-    </div>
-  </div>
+    // CORS preflight
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Discogs-Token, X-EB-User, X-EB-Token, X-Bertus-Token',
+        }
+      });
+    }
 
-  <div>
-    <div class="nav-label">Periode</div>
-    <div class="period-group">
-      <button class="period-btn" onclick="setPeriod('dag',this)">Vandaag</button>
-      <button class="period-btn active" onclick="setPeriod('week',this)">Deze week</button>
-      <button class="period-btn" onclick="setPeriod('maand',this)">Deze maand</button>
-      <button class="period-btn" onclick="setPeriod('kwartaal',this)">Dit kwartaal</button>
-      <button class="period-btn" onclick="setPeriod('jaar',this)">Dit jaar</button>
-    </div>
-  </div>
+    const cors = {
+      'Access-Control-Allow-Origin': '*',
+      'Content-Type': 'application/json',
+    };
 
-  <div class="connect-section">
-    <div class="connect-label">Discogs</div>
-    <div id="discogs-badge" class="badge-disconnected"><div style="width:6px;height:6px;border-radius:50%;background:var(--muted);"></div>Niet verbonden</div>
-    <input id="inp-discogs-token" class="token-input" type="password" placeholder="Discogs token">
-    <button class="btn-connect" onclick="connectDiscogs()">Verbinden</button>
-    <button class="btn-sm" onclick="loadDemo()">Demo data laden</button>
-    <div id="discogs-status" class="status-msg"></div>
-  </div>
+    const path = url.pathname;
 
-  <div class="connect-section">
-    <div class="connect-label">e-Boekhouden</div>
-    <div id="eboekhouden-badge" class="badge-disconnected"><div style="width:6px;height:6px;border-radius:50%;background:var(--muted);"></div>Niet verbonden</div>
-    <input id="inp-eb-user" class="token-input" type="text" placeholder="Gebruikersnaam">
-    <input id="inp-eb-token" class="token-input" type="password" placeholder="API token / wachtwoord">
-    <button class="btn-connect" onclick="connectEboekhouden()">Verbinden</button>
-    <div id="eb-status" class="status-msg"></div>
-  </div>
+    // ── Discogs ──────────────────────────────────────────────
+    if (path.startsWith('/discogs/')) {
+      const token = request.headers.get('X-Discogs-Token');
+      if (!token) return json({ error: 'Geen Discogs token' }, 401, cors);
 
-  <div class="connect-section">
-    <div class="connect-label">Bertus distributie</div>
-    <div id="bertus-badge" class="badge-disconnected"><div style="width:6px;height:6px;border-radius:50%;background:var(--muted);"></div>Niet verbonden</div>
-    <input id="inp-bertus-token" class="token-input" type="password" placeholder="Bertus API token">
-    <button class="btn-connect" onclick="connectBertus()">Verbinden</button>
-    <div id="bertus-status" class="status-msg"></div>
-  </div>
-</aside>
+      const discogsPath = path.replace('/discogs/', '');
+      const params = url.searchParams.toString();
+      const discogsUrl = `https://api.discogs.com/${discogsPath}${params ? '?' + params : ''}`;
 
-<main class="main">
+      const resp = await fetch(discogsUrl, {
+        headers: {
+          'Authorization': `Discogs token=${token}`,
+          'User-Agent': 'Major9VinylDashboard/1.0 +major9.nl',
+          'Accept': 'application/json',
+        }
+      });
 
-<!-- DASHBOARD -->
-<div id="page-dashboard">
-  <div class="page-header">
-    <div><div class="page-title">Overzicht</div><div class="page-sub" id="period-label">Deze week</div></div>
-    <div class="last-sync" id="last-sync">—</div>
-  </div>
-  <div class="metrics" id="metrics-row"></div>
-  <div class="charts-row">
-    <div class="chart-card">
-      <div class="card-title">Omzet & inkoop
-        <div class="legend">
-          <span><span class="legend-dot" style="background:#c8a96e"></span>Discogs</span>
-          <span><span class="legend-dot" style="background:#3ecfcf"></span>Vinted</span>
-          <span><span class="legend-dot" style="background:#7f77dd"></span>Inkoop</span>
-        </div>
-      </div>
-      <div style="position:relative;height:220px;"><canvas id="omzetChart" role="img" aria-label="Omzet vs inkoop per periode"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <div class="card-title">Marge %</div>
-      <div style="position:relative;height:240px;"><canvas id="margeChart" role="img" aria-label="Marge percentage"></canvas></div>
-    </div>
-  </div>
-  <div class="two-col">
-    <div class="section-card">
-      <div class="card-title">Recente transacties</div>
-      <table>
-        <thead><tr><th>Album</th><th>Bron</th><th>Type</th><th>Prijs</th><th>Marge</th><th>Datum</th></tr></thead>
-        <tbody id="dash-trans-body"></tbody>
-      </table>
-    </div>
-    <div class="section-card">
-      <div class="card-title">Omzet per kanaal</div>
-      <div style="position:relative;height:200px;"><canvas id="kanaalChart" role="img" aria-label="Omzet per verkoopkanaal"></canvas></div>
-    </div>
-  </div>
-</div>
+      const data = await resp.text();
+      return new Response(data, {
+        status: resp.status,
+        headers: { ...cors, 'Content-Type': 'application/json' }
+      });
+    }
 
-<!-- VOORRAAD -->
-<div id="page-voorraad" style="display:none;">
-  <div class="page-header">
-    <div><div class="page-title">Voorraad & collectie</div><div class="page-sub">Discogs — Major9.nl</div></div>
-    <button class="btn-action" onclick="connectDiscogs()">↻ Verversen</button>
-  </div>
-  <div class="section-card">
-    <div class="table-controls">
-      <input id="stock-search" class="search-input" placeholder="Zoek artiest of album..." oninput="filterStock()">
-      <select id="stock-genre" class="filter-select" onchange="filterStock()"><option value="">Alle genres</option></select>
-      <select id="stock-status" class="filter-select" onchange="filterStock()">
-        <option value="">Alles</option><option value="Te koop">Te koop</option>
-        <option value="Collectie">Collectie</option><option value="Gereserveerd">Gereserveerd</option><option value="Verkocht">Verkocht</option>
-      </select>
-    </div>
-    <table style="table-layout:fixed;">
-      <thead><tr>
-        <th style="width:27%;">Artiest / Album</th><th style="width:7%;">Jaar</th>
-        <th style="width:10%;">Genre</th><th style="width:8%;">Staat</th>
-        <th style="width:10%;">Vraagprijs</th><th style="width:11%;">Bertus inkoop</th><th style="width:13%;">Bertus voorraad</th><th style="width:14%;">Status</th>
-      </tr></thead>
-      <tbody id="stock-body"></tbody>
-    </table>
-    <div class="table-footer" id="stock-count"></div>
-  </div>
-</div>
+    // ── e-Boekhouden ─────────────────────────────────────────
+    if (path.startsWith('/eboekhouden/')) {
+      const ebUser = request.headers.get('X-EB-User');
+      const ebToken = request.headers.get('X-EB-Token');
+      if (!ebUser || !ebToken) return json({ error: 'Geen e-Boekhouden credentials' }, 401, cors);
 
-<!-- VINTED -->
-<div id="page-vinted" style="display:none;">
-  <div class="page-header">
-    <div><div class="page-title">Vinted verkopen</div><div class="page-sub">Handmatige invoer per verkoop of per maand</div></div>
-  </div>
+      const subpath = path.replace('/eboekhouden/', '');
 
-  <div class="tab-row">
-    <button class="tab-btn active" onclick="showVintedTab('per-verkoop',this)">Per verkoop</button>
-    <button class="tab-btn" onclick="showVintedTab('per-maand',this)">Per maand (bulk)</button>
-    <button class="tab-btn" onclick="showVintedTab('overzicht',this)">Overzicht</button>
-  </div>
+      // e-Boekhouden uses SOAP — we build a minimal SOAP envelope
+      if (subpath === 'mutaties') {
+        const soapBody = `<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+               xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <GetMutaties xmlns="https://soap.e-boekhouden.nl/boekhouden/webservice">
+      <SecurityValues>
+        <UserName>${ebUser}</UserName>
+        <AuthKey>${ebToken}</AuthKey>
+        <SessionID></SessionID>
+      </SecurityValues>
+      <cFilter>
+        <Trefwoord>vinyl</Trefwoord>
+        <DatumVan>2024-01-01</DatumVan>
+        <DatumTm>2026-12-31</DatumTm>
+      </cFilter>
+    </GetMutaties>
+  </soap:Body>
+</soap:Envelope>`;
 
-  <div id="vt-per-verkoop">
-    <div class="section-card">
-      <div class="card-title">Nieuwe Vinted verkoop invoeren</div>
-      <div class="form-grid">
-        <div class="fg full"><label>Artiest / Album</label><input id="vt-album" placeholder="bv. The Cure – Disintegration"></div>
-        <div class="fg"><label>Verkoopprijs (€)</label><input id="vt-prijs" type="number" step="0.01" placeholder="28.00"></div>
-        <div class="fg"><label>Inkoopprijs (€)</label><input id="vt-ink" type="number" step="0.01" placeholder="10.00"></div>
-        <div class="fg"><label>Genre</label><input id="vt-genre" placeholder="bv. Rock"></div>
-        <div class="fg"><label>Datum</label><input id="vt-datum" type="date"></div>
-        <button class="btn-add" onclick="addVintedVerkoop()">+ Verkoop toevoegen</button>
-      </div>
-    </div>
-  </div>
+        const resp = await fetch('https://soap.e-boekhouden.nl/boekhouden/webservice.asmx', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/xml; charset=utf-8',
+            'SOAPAction': 'https://soap.e-boekhouden.nl/boekhouden/webservice/GetMutaties',
+          },
+          body: soapBody,
+        });
 
-  <div id="vt-per-maand" style="display:none;">
-    <div class="section-card">
-      <div class="card-title">Maandelijkse bulk-invoer</div>
-      <p style="font-size:11px;color:var(--muted);margin-bottom:1rem;">Voer totalen per maand in — handig als je niet elke losse verkoop wilt invoeren.</p>
-      <div class="form-grid">
-        <div class="fg"><label>Jaar</label><select id="bulk-jaar">
-          <option>2024</option><option selected>2025</option><option>2026</option>
-        </select></div>
-        <div class="fg"><label>Maand</label><select id="bulk-maand">
-          <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maart</option>
-          <option value="4">April</option><option value="5">Mei</option><option value="6">Juni</option>
-          <option value="7">Juli</option><option value="8">Augustus</option><option value="9">September</option>
-          <option value="10">Oktober</option><option value="11">November</option><option value="12">December</option>
-        </select></div>
-        <div class="fg"><label>Totale omzet (€)</label><input id="bulk-omzet" type="number" step="0.01" placeholder="350.00"></div>
-        <div class="fg"><label>Totale inkoop (€)</label><input id="bulk-ink" type="number" step="0.01" placeholder="140.00"></div>
-        <div class="fg"><label>Aantal verkopen</label><input id="bulk-aantal" type="number" placeholder="12"></div>
-        <div class="fg"><label>Notitie (optioneel)</label><input id="bulk-notitie" placeholder="bv. goede maand"></div>
-        <button class="btn-add" onclick="addBulkMaand()">+ Maand opslaan</button>
-      </div>
-    </div>
-    <div class="section-card">
-      <div class="card-title">Ingevoerde maanden</div>
-      <table style="table-layout:fixed;">
-        <thead><tr><th style="width:20%;">Periode</th><th style="width:20%;">Omzet</th><th style="width:20%;">Inkoop</th><th style="width:15%;">Winst</th><th style="width:15%;">Verkopen</th><th style="width:10%;"></th></tr></thead>
-        <tbody id="bulk-body"></tbody>
-      </table>
-    </div>
-  </div>
+        const xml = await resp.text();
 
-  <div id="vt-overzicht" style="display:none;">
-    <div class="section-card">
-      <div class="card-title">Alle Vinted verkopen</div>
-      <table style="table-layout:fixed;">
-        <thead><tr><th style="width:35%;">Album</th><th style="width:12%;">Genre</th><th style="width:15%;">Prijs</th><th style="width:13%;">Marge</th><th style="width:25%;">Datum</th></tr></thead>
-        <tbody id="vinted-trans-body"></tbody>
-      </table>
-    </div>
-  </div>
-</div>
+        // Parse SOAP XML to JSON
+        const mutaties = parseMutatiesXML(xml);
+        return new Response(JSON.stringify({ mutaties }), {
+          status: 200,
+          headers: { ...cors, 'Content-Type': 'application/json' }
+        });
+      }
 
-<!-- TRANSACTIES -->
-<div id="page-transacties" style="display:none;">
-  <div class="page-header">
-    <div><div class="page-title">Transacties</div><div class="page-sub">Alle inkopen en verkopen</div></div>
-  </div>
-  <div class="two-col">
-    <div class="section-card">
-      <div class="card-title">Alle transacties
-        <div style="display:flex;gap:6px;">
-          <select id="trans-filter-type" class="filter-select" style="font-size:11px;padding:4px 8px;" onchange="renderTransTable()">
-            <option value="">Alles</option><option value="verkoop">Verkopen</option><option value="inkoop">Inkopen</option>
-          </select>
-          <select id="trans-filter-bron" class="filter-select" style="font-size:11px;padding:4px 8px;" onchange="renderTransTable()">
-            <option value="">Alle bronnen</option><option value="discogs">Discogs</option>
-            <option value="vinted">Vinted</option><option value="handmatig">Handmatig</option>
-          </select>
-        </div>
-      </div>
-      <table style="table-layout:fixed;">
-        <thead><tr><th style="width:32%;">Album</th><th style="width:12%;">Bron</th><th style="width:12%;">Type</th><th style="width:14%;">Prijs</th><th style="width:12%;">Marge</th><th style="width:18%;">Datum</th></tr></thead>
-        <tbody id="trans-body"></tbody>
-      </table>
-    </div>
-    <div class="section-card">
-      <div class="card-title">Nieuwe transactie</div>
-      <div class="form-grid">
-        <div class="fg full"><label>Artiest / Album</label><input id="inp-album" placeholder="bv. Pink Floyd – The Wall"></div>
-        <div class="fg"><label>Type</label><select id="inp-type"><option value="verkoop">Verkoop</option><option value="inkoop">Inkoop</option></select></div>
-        <div class="fg"><label>Kanaal</label><select id="inp-bron"><option value="handmatig">Handmatig</option><option value="discogs">Discogs</option><option value="vinted">Vinted</option></select></div>
-        <div class="fg"><label>Datum</label><input id="inp-datum" type="date"></div>
-        <div class="fg"><label>Verkoopprijs (€)</label><input id="inp-prijs" type="number" step="0.01" placeholder="25.00"></div>
-        <div class="fg"><label>Inkoopprijs (€)</label><input id="inp-ink" type="number" step="0.01" placeholder="12.00"></div>
-        <div class="fg"><label>Genre</label><input id="inp-genre" placeholder="bv. Rock"></div>
-        <button class="btn-add" onclick="addTrans()">+ Toevoegen</button>
-      </div>
-    </div>
-  </div>
-</div>
+      // Session-based auth attempt
+      if (subpath === 'session') {
+        const soapBody = `<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+               xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <OpenSession xmlns="https://soap.e-boekhouden.nl/boekhouden/webservice">
+      <Username>${ebUser}</Username>
+      <SecurityCode1>${ebToken}</SecurityCode1>
+      <SecurityCode2></SecurityCode2>
+    </OpenSession>
+  </soap:Body>
+</soap:Envelope>`;
 
-<!-- ANALYSE -->
-<div id="page-analyse" style="display:none;">
-  <div class="page-header">
-    <div><div class="page-title">Analyse</div><div class="page-sub">Trends, bestsellers en opvallende patronen</div></div>
-    <button class="btn-action" onclick="renderAnalyse()">↻ Herberekenen</button>
-  </div>
+        const resp = await fetch('https://soap.e-boekhouden.nl/boekhouden/webservice.asmx', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/xml; charset=utf-8',
+            'SOAPAction': 'https://soap.e-boekhouden.nl/boekhouden/webservice/OpenSession',
+          },
+          body: soapBody,
+        });
+        const xml = await resp.text();
+        const sessionMatch = xml.match(/<SessionID>([^<]+)<\/SessionID>/);
+        const sessionID = sessionMatch ? sessionMatch[1] : null;
+        return new Response(JSON.stringify({ sessionID, raw: xml.slice(0, 500) }), {
+          headers: { ...cors }
+        });
+      }
 
-  <div class="analyse-grid">
-    <div class="section-card">
-      <div class="card-title">Top 10 best verkochte artiesten</div>
-      <div id="top-artiesten"></div>
-    </div>
-    <div class="section-card">
-      <div class="card-title">Top 10 best verkochte albums</div>
-      <div id="top-albums"></div>
-    </div>
-  </div>
+      return json({ error: 'Onbekend e-Boekhouden endpoint: ' + subpath }, 404, cors);
+    }
 
-  <div class="section-card">
-    <div class="card-title">Omzettrend per maand (dit jaar)
-      <div class="legend">
-        <span><span class="legend-dot" style="background:#c8a96e"></span>Discogs</span>
-        <span><span class="legend-dot" style="background:#3ecfcf"></span>Vinted</span>
-      </div>
-    </div>
-    <div style="position:relative;height:220px;"><canvas id="trendChart" role="img" aria-label="Omzettrend per maand"></canvas></div>
-  </div>
+    // ── Bertus ───────────────────────────────────────────────
+    if (path.startsWith('/bertus/')) {
+      const token = request.headers.get('X-Bertus-Token');
+      if (!token) return json({ error: 'Geen Bertus token' }, 401, cors);
 
-  <div class="analyse-grid">
-    <div class="section-card">
-      <div class="card-title">Prijstrends — stijgers</div>
-      <div id="prijsstijgers"></div>
-    </div>
-    <div class="section-card">
-      <div class="card-title">Prijstrends — dalers</div>
-      <div id="prijsdalers"></div>
-    </div>
-  </div>
+      const subpath = path.replace('/bertus/', '');
+      const params = url.searchParams.toString();
+      const bertusUrl = `https://api.bertus.nl/v1/${subpath}${params ? '?' + params : ''}`;
 
-  <div class="section-card">
-    <div class="card-title">Inzichten</div>
-    <div id="inzichten"></div>
-  </div>
-</div>
+      const resp = await fetch(bertusUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'User-Agent': 'Major9VinylDashboard/1.0',
+        }
+      });
 
-<!-- KOSTEN -->
-<div id="page-kosten" style="display:none;">
-  <div class="page-header">
-    <div><div class="page-title">Kosten</div><div class="page-sub">Gekoppeld aan e-Boekhouden</div></div>
-    <button class="btn-action" onclick="connectEboekhouden()">↻ Verversen</button>
-  </div>
-  <div class="metrics" id="kosten-metrics" style="grid-template-columns:repeat(4,1fr);"></div>
-  <div class="section-card">
-    <div class="card-title">Kostenposten
-      <select id="kosten-filter" class="filter-select" style="font-size:11px;padding:4px 8px;" onchange="filterKosten()">
-        <option value="">Alle categorieën</option>
-      </select>
-    </div>
-    <table style="table-layout:fixed;">
-      <thead><tr><th style="width:35%;">Omschrijving</th><th style="width:20%;">Categorie</th><th style="width:18%;">Bedrag</th><th style="width:27%;">Datum</th></tr></thead>
-      <tbody id="kosten-body"></tbody>
-    </table>
-    <div class="table-footer" id="kosten-footer"></div>
-  </div>
-  <div class="section-card">
-    <div class="card-title">Kosten handmatig toevoegen</div>
-    <div class="form-grid">
-      <div class="fg full"><label>Omschrijving</label><input id="kost-omschr" placeholder="bv. Inkooppartij vinyl markt"></div>
-      <div class="fg"><label>Bedrag (€)</label><input id="kost-bedrag" type="number" step="0.01" placeholder="45.00"></div>
-      <div class="fg"><label>Datum</label><input id="kost-datum" type="date"></div>
-      <div class="fg"><label>Categorie</label><input id="kost-cat" placeholder="bv. Inkoop"></div>
-      <button class="btn-add" onclick="addKost()">+ Kosten toevoegen</button>
-    </div>
-  </div>
-</div>
+      const data = await resp.text();
+      return new Response(data, {
+        status: resp.status,
+        headers: { ...cors, 'Content-Type': 'application/json' }
+      });
+    }
 
-</main>
-</div>
+    // ── Status check ─────────────────────────────────────────
+    if (path === '/' || path === '') {
+      return new Response(JSON.stringify({
+        status: 'Major9 Vinyl Worker actief',
+        endpoints: ['/discogs/*', '/eboekhouden/mutaties', '/bertus/*'],
+        version: '1.0'
+      }), { headers: cors });
+    }
 
-<script>
-const USERNAME = 'Major9.nl';
-let inventory = [], transactions = [], vintedTrans = [], bulkMaanden = [], kosten = [];
-let currentPeriod = 'week';
-let omzetChart, margeChart, kanaalChart, trendChart;
-let bertusConnected = false, bertusToken = '';
-
-// ---- Storage helpers ----
-function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {} }
-function load(key, def) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch(e) { return def; } }
-
-// ---- Page navigation ----
-function showPage(page, btn) {
-  ['dashboard','voorraad','vinted','transacties','analyse','kosten'].forEach(p =>
-    document.getElementById('page-'+p).style.display = p===page ? 'block' : 'none');
-  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  if (page==='analyse') renderAnalyse();
-  if (page==='voorraad') renderStockTable();
-  if (page==='transacties') renderTransTable();
-  if (page==='kosten') renderKosten();
-  if (page==='vinted') { renderVintedTrans(); renderBulkTable(); }
-}
-
-function showVintedTab(tab, btn) {
-  ['per-verkoop','per-maand','overzicht'].forEach(t =>
-    document.getElementById('vt-'+t).style.display = t===tab ? 'block' : 'none');
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  if (tab==='overzicht') renderVintedTrans();
-}
-
-// ---- Period ----
-function setPeriod(p, btn) {
-  currentPeriod = p;
-  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  const labels = { dag:'Vandaag', week:'Deze week', maand:'Deze maand', kwartaal:'Dit kwartaal', jaar:'Dit jaar' };
-  document.getElementById('period-label').textContent = labels[p];
-  renderMetrics(); renderCharts();
-}
-
-// ---- Date helpers ----
-function today() { return new Date().toISOString().split('T')[0]; }
-function inPeriod(datum, period) {
-  if (!datum) return false;
-  const d = new Date(datum), now = new Date();
-  if (period==='dag') return d.toDateString()===now.toDateString();
-  if (period==='week') {
-    const start = new Date(now); start.setDate(now.getDate()-now.getDay()+1);
-    return d >= start && d <= now;
+    return json({ error: 'Endpoint niet gevonden: ' + path }, 404, cors);
   }
-  if (period==='maand') return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
-  if (period==='kwartaal') {
-    const q = Math.floor(now.getMonth()/3);
-    return Math.floor(d.getMonth()/3)===q && d.getFullYear()===now.getFullYear();
-  }
-  if (period==='jaar') return d.getFullYear()===now.getFullYear();
-  return true;
-}
+};
 
-// ---- Metrics ----
-function renderMetrics() {
-  const allTrans = [...transactions, ...vintedTrans];
-  const periode = allTrans.filter(t => inPeriod(t.datum, currentPeriod));
-  const verkopen = periode.filter(t => t.type==='verkoop');
-  const inkopen = periode.filter(t => t.type==='inkoop');
-  const omzet = verkopen.reduce((a,t) => a + (t.prijs||0), 0);
-  const inkoop = inkopen.reduce((a,t) => a + (t.prijs||0), 0);
-
-  // Also add bulk months
-  const now = new Date();
-  const bulkInPeriod = bulkMaanden.filter(b => {
-    if (currentPeriod==='jaar') return b.jaar == now.getFullYear();
-    if (currentPeriod==='maand') return b.jaar == now.getFullYear() && b.maand == now.getMonth()+1;
-    return false;
+function json(obj, status = 200, headers = {}) {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...headers }
   });
-  const bulkOmzet = bulkInPeriod.reduce((a,b) => a+(b.omzet||0), 0);
-  const bulkInkoop = bulkInPeriod.reduce((a,b) => a+(b.ink||0), 0);
-
-  const totOmzet = omzet + bulkOmzet;
-  const totInkoop = inkoop + bulkInkoop;
-  const winst = totOmzet - totInkoop;
-  const marge = totOmzet > 0 ? ((winst/totOmzet)*100).toFixed(1) : 0;
-  const kostenTot = kosten.filter(k => inPeriod(k.datum, currentPeriod)).reduce((a,k) => a+(k.bedrag||0), 0);
-  const netto = winst - kostenTot;
-  const inV = inventory.filter(i => i.status==='Te koop').length;
-
-  document.getElementById('metrics-row').innerHTML = `
-    <div class="metric"><div class="metric-label">Omzet</div><div class="metric-value" style="color:var(--accent)">€${Math.round(totOmzet).toLocaleString('nl-NL')}</div><div class="metric-sub">alle kanalen</div></div>
-    <div class="metric"><div class="metric-label">Inkoop</div><div class="metric-value">€${Math.round(totInkoop).toLocaleString('nl-NL')}</div><div class="metric-sub">uitgegeven</div></div>
-    <div class="metric"><div class="metric-label">Bruto winst</div><div class="metric-value ${winst>=0?'metric-up':'metric-down'}">€${Math.round(Math.abs(winst)).toLocaleString('nl-NL')}</div><div class="metric-sub">${winst>=0?'positief':'negatief'}</div></div>
-    <div class="metric"><div class="metric-label">Marge</div><div class="metric-value" style="color:var(--accent2)">${marge}%</div><div class="metric-sub">bruto</div></div>
-    <div class="metric"><div class="metric-label">Netto winst</div><div class="metric-value ${netto>=0?'metric-up':'metric-down'}">€${Math.round(Math.abs(netto)).toLocaleString('nl-NL')}</div><div class="metric-sub">na kosten</div></div>
-    <div class="metric"><div class="metric-label">Te koop</div><div class="metric-value">${inV}</div><div class="metric-sub">platen</div></div>
-  `;
 }
 
-// ---- Charts ----
-function renderCharts() {
-  if (omzetChart) omzetChart.destroy();
-  if (margeChart) margeChart.destroy();
-  if (kanaalChart) kanaalChart.destroy();
-
-  const months = ['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
-  const now = new Date();
-  let labels, discogsData, vintedData, inkData, margeData;
-
-  if (currentPeriod === 'jaar') {
-    labels = months.slice(0, now.getMonth()+1);
-    discogsData = labels.map((_,i) => sumByMonth(transactions, i, 'verkoop'));
-    vintedData = labels.map((_,i) => sumByMonth(vintedTrans, i, 'verkoop') + getBulkMonth(i, 'omzet'));
-    inkData = labels.map((_,i) => sumByMonth([...transactions,...vintedTrans], i, 'inkoop') + getBulkMonth(i, 'ink'));
-    margeData = labels.map((_,i) => {
-      const o = discogsData[i] + vintedData[i], c = inkData[i];
-      return o > 0 ? Math.round((o-c)/o*100) : 0;
+function parseMutatiesXML(xml) {
+  const items = [];
+  const matches = xml.matchAll(/<cMutatieList[^>]*>([\s\S]*?)<\/cMutatieList>/g);
+  for (const match of matches) {
+    const block = match[1];
+    const get = (tag) => {
+      const m = block.match(new RegExp(`<${tag}>([^<]*)<\/${tag}>`));
+      return m ? m[1].trim() : '';
+    };
+    items.push({
+      omschrijving: get('Omschrijving') || get('InvoiceNumber') || '—',
+      bedrag: parseFloat(get('BedragDebet') || get('BedragCredit') || '0'),
+      datum: get('Datum') ? get('Datum').slice(0, 10) : '',
+      categorie: get('Categorie') || get('GrootboekOmschrijving') || 'Overig',
+      grootboek: get('GrootboekCode') || '',
     });
-  } else {
-    const pd = getDemoChartData();
-    labels = pd.labels; discogsData = pd.discogs; vintedData = pd.vinted; inkData = pd.ink; margeData = pd.marge;
-  }
-
-  omzetChart = new Chart(document.getElementById('omzetChart'), {
-    type:'bar',
-    data:{labels, datasets:[
-      {label:'Discogs',data:discogsData,backgroundColor:'#c8a96e',borderRadius:4},
-      {label:'Vinted',data:vintedData,backgroundColor:'#3ecfcf',borderRadius:4},
-      {label:'Inkoop',data:inkData,backgroundColor:'#7f77dd',borderRadius:4},
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#7a7875',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},
-              y:{ticks:{color:'#7a7875',font:{size:10},callback:v=>'€'+v},grid:{color:'rgba(255,255,255,0.04)'}}}}
-  });
-
-  margeChart = new Chart(document.getElementById('margeChart'), {
-    type:'line',
-    data:{labels,datasets:[{label:'Marge %',data:margeData,borderColor:'#c8a96e',backgroundColor:'rgba(200,169,110,0.1)',tension:0.4,fill:true,pointBackgroundColor:'#c8a96e',pointRadius:3}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#7a7875',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},
-              y:{min:0,max:100,ticks:{color:'#7a7875',font:{size:10},callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.04)'}}}}
-  });
-
-  const dOmzet = transactions.filter(t=>t.type==='verkoop').reduce((a,t)=>a+(t.prijs||0),0);
-  const vOmzet = vintedTrans.filter(t=>t.type==='verkoop').reduce((a,t)=>a+(t.prijs||0),0) + bulkMaanden.reduce((a,b)=>a+(b.omzet||0),0);
-  kanaalChart = new Chart(document.getElementById('kanaalChart'), {
-    type:'doughnut',
-    data:{labels:['Discogs','Vinted'],datasets:[{data:[Math.round(dOmzet),Math.round(vOmzet)],backgroundColor:['#c8a96e','#3ecfcf'],borderWidth:0}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'65%'}
-  });
-}
-
-function sumByMonth(arr, monthIdx, type) {
-  const now = new Date();
-  return arr.filter(t => t.type===type && t.datum && new Date(t.datum).getFullYear()===now.getFullYear() && new Date(t.datum).getMonth()===monthIdx)
-    .reduce((a,t)=>a+(t.prijs||0),0);
-}
-function getBulkMonth(monthIdx, field) {
-  const now = new Date();
-  const b = bulkMaanden.find(b => b.jaar==now.getFullYear() && b.maand==monthIdx+1);
-  return b ? (b[field]||0) : 0;
-}
-function getDemoChartData() {
-  const sets = {
-    dag:      {labels:['08u','10u','12u','14u','16u','18u'],discogs:[0,15,22,18,20,12],vinted:[0,8,10,5,0,6],ink:[0,8,12,9,8,5],marge:[0,52,55,48,58,60]},
-    week:     {labels:['Ma','Di','Wo','Do','Vr','Za','Zo'],discogs:[45,72,38,95,85,112,40],vinted:[20,30,15,40,35,55,20],ink:[20,30,15,45,40,48,12],marge:[55,58,60,52,53,57,70]},
-    maand:    {labels:['Wk1','Wk2','Wk3','Wk4'],discogs:[410,520,460,450],vinted:[150,200,180,220],ink:[180,210,195,195],marge:[56,59,58,57]},
-    kwartaal: {labels:['Jan','Feb','Mrt'],discogs:[1650,1890,1880],vinted:[600,750,820],ink:[720,810,710],marge:[56,57,62]},
-    jaar:     {labels:['Jan','Feb','Mrt','Apr','Mei','Jun'],discogs:[1650,1890,1880,2100,1950,2300],vinted:[600,750,820,900,850,1100],ink:[720,810,710,850,800,920],marge:[56,57,62,60,61,63]},
-  };
-  return sets[currentPeriod] || sets.week;
-}
-
-// ---- Dashboard recent trans ----
-function renderDashTrans() {
-  const all = [...transactions,...vintedTrans].sort((a,b)=>(b.datum||'').localeCompare(a.datum||'')).slice(0,8);
-  document.getElementById('dash-trans-body').innerHTML = all.map(t => {
-    const isV = t.type==='verkoop';
-    const mp = isV && t.ink>0 ? Math.round((t.prijs-t.ink)/t.prijs*100) : null;
-    const bronCls = t.bron==='discogs'?'pgold':t.bron==='vinted'?'pt':'pgray';
-    const bronLabel = t.bron==='discogs'?'Discogs':t.bron==='vinted'?'Vinted':'Handm.';
-    return `<tr>
-      <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px" title="${t.album}">${t.album}</td>
-      <td><span class="pill ${bronCls}">${bronLabel}</span></td>
-      <td><span class="pill ${isV?'pg':'pa'}">${isV?'Verk.':'Ink.'}</span></td>
-      <td style="color:${isV?'var(--green)':'var(--amber)'};">${isV?'+':'-'}€${Math.round(t.prijs)}</td>
-      <td>${mp!==null?`<span class="pill pgold">${mp}%</span>`:'—'}</td>
-      <td style="color:var(--muted);font-size:11px;">${t.datum||'—'}</td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted);">Nog geen transacties</td></tr>';
-}
-
-// ---- Voorraad ----
-function populateGenreFilter() {
-  const gs = [...new Set(inventory.map(i=>i.genre).filter(Boolean))].sort();
-  document.getElementById('stock-genre').innerHTML = '<option value="">Alle genres</option>' + gs.map(g=>`<option>${g}</option>`).join('');
-}
-
-function filterStock() {
-  const q = document.getElementById('stock-search').value.toLowerCase();
-  const g = document.getElementById('stock-genre').value;
-  const s = document.getElementById('stock-status').value;
-  renderStockTable(inventory.filter(i => (!q||(i.artist+' '+i.title).toLowerCase().includes(q)) && (!g||i.genre===g) && (!s||i.status===s)));
-}
-
-function renderStockTable(list) {
-  list = list !== undefined ? list : inventory;
-  const sc = s => s==='Te koop'?'pg':s==='Collectie'?'pp':s==='Gereserveerd'?'pa':s==='Verkocht'?'pr':'pgray';
-  document.getElementById('stock-body').innerHTML = list.length
-    ? list.map(i => {
-        const bertusInkoop = bertusConnected && i.bertusPrice > 0 ? `<span style="color:var(--amber);">€${parseFloat(i.bertusPrice).toFixed(2)}</span>` : '<span style="color:var(--muted);font-size:10px;">—</span>';
-        const bertusVoorraad = bertusConnected ? `<span class="pill ${i.bertus?'pg':'pr'}">${i.bertus?'Leverbaar':'Niet leverbaar'}</span>` : '<span style="color:var(--muted);font-size:10px;">—</span>';
-        return `<tr>
-          <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${i.artist} – ${i.title}">${i.artist} – ${i.title}</td>
-          <td>${i.year||'—'}</td><td>${i.genre||'—'}</td>
-          <td><span class="pill pp">${i.condition||'—'}</span></td>
-          <td style="color:var(--accent);">${i.price>0?'€'+parseFloat(i.price).toFixed(2):'—'}</td>
-          <td>${bertusInkoop}</td>
-          <td>${bertusVoorraad}</td>
-          <td><span class="pill ${sc(i.status)}">${i.status||'—'}</span></td>
-        </tr>`;
-      }).join('')
-    : '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted);">Geen items — verbind Discogs</td></tr>';
-  document.getElementById('stock-count').textContent = `${list.length} van ${inventory.length} items`;
-}
-
-// ---- Vinted ----
-function addVintedVerkoop() {
-  const album = document.getElementById('vt-album').value.trim();
-  const prijs = parseFloat(document.getElementById('vt-prijs').value);
-  const ink = parseFloat(document.getElementById('vt-ink').value)||0;
-  const genre = document.getElementById('vt-genre').value.trim()||'Overig';
-  const datum = document.getElementById('vt-datum').value||today();
-  if (!album||isNaN(prijs)) return;
-  vintedTrans.unshift({album,type:'verkoop',prijs,ink,genre,datum,bron:'vinted'});
-  save('vinyl-vinted', vintedTrans);
-  document.getElementById('vt-album').value='';
-  document.getElementById('vt-prijs').value='';
-  document.getElementById('vt-ink').value='';
-  renderVintedTrans(); renderDashTrans(); renderMetrics();
-}
-
-function addBulkMaand() {
-  const jaar = parseInt(document.getElementById('bulk-jaar').value);
-  const maand = parseInt(document.getElementById('bulk-maand').value);
-  const omzet = parseFloat(document.getElementById('bulk-omzet').value)||0;
-  const ink = parseFloat(document.getElementById('bulk-ink').value)||0;
-  const aantal = parseInt(document.getElementById('bulk-aantal').value)||0;
-  const notitie = document.getElementById('bulk-notitie').value.trim();
-  const bestaand = bulkMaanden.findIndex(b => b.jaar===jaar && b.maand===maand);
-  const entry = {jaar, maand, omzet, ink, aantal, notitie};
-  if (bestaand >= 0) bulkMaanden[bestaand] = entry;
-  else bulkMaanden.push(entry);
-  save('vinyl-bulk', bulkMaanden);
-  document.getElementById('bulk-omzet').value='';
-  document.getElementById('bulk-ink').value='';
-  document.getElementById('bulk-aantal').value='';
-  document.getElementById('bulk-notitie').value='';
-  renderBulkTable(); renderMetrics();
-}
-
-function renderBulkTable() {
-  const maandNamen = ['','Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
-  const sorted = [...bulkMaanden].sort((a,b) => b.jaar-a.jaar || b.maand-a.maand);
-  document.getElementById('bulk-body').innerHTML = sorted.length
-    ? sorted.map((b,i) => {
-        const winst = (b.omzet||0)-(b.ink||0);
-        return `<tr>
-          <td>${maandNamen[b.maand]} ${b.jaar}</td>
-          <td style="color:var(--green);">€${(b.omzet||0).toFixed(2)}</td>
-          <td style="color:var(--amber);">€${(b.ink||0).toFixed(2)}</td>
-          <td style="color:${winst>=0?'var(--green)':'var(--red)'};">€${winst.toFixed(2)}</td>
-          <td>${b.aantal||'—'}</td>
-          <td><button class="btn-action" style="padding:3px 8px;font-size:10px;" onclick="deleteBulk(${i})">✕</button></td>
-        </tr>`;
-      }).join('')
-    : '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--muted);">Nog geen maanden ingevoerd</td></tr>';
-}
-
-function deleteBulk(idx) {
-  const sorted = [...bulkMaanden].sort((a,b) => b.jaar-a.jaar || b.maand-a.maand);
-  const entry = sorted[idx];
-  bulkMaanden = bulkMaanden.filter(b => !(b.jaar===entry.jaar && b.maand===entry.maand));
-  save('vinyl-bulk', bulkMaanden);
-  renderBulkTable(); renderMetrics();
-}
-
-function renderVintedTrans() {
-  document.getElementById('vinted-trans-body').innerHTML = vintedTrans.length
-    ? vintedTrans.map(t => {
-        const mp = t.ink>0 ? Math.round((t.prijs-t.ink)/t.prijs*100) : null;
-        return `<tr>
-          <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${t.album}">${t.album}</td>
-          <td>${t.genre||'—'}</td>
-          <td style="color:var(--green);">+€${Math.round(t.prijs)}</td>
-          <td>${mp!==null?`<span class="pill pgold">${mp}%</span>`:'—'}</td>
-          <td style="color:var(--muted);">${t.datum||'—'}</td>
-        </tr>`;
-      }).join('')
-    : '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted);">Nog geen Vinted verkopen</td></tr>';
-}
-
-// ---- Transacties ----
-function renderTransTable() {
-  const typeF = document.getElementById('trans-filter-type').value;
-  const bronF = document.getElementById('trans-filter-bron').value;
-  const all = [...transactions,...vintedTrans].sort((a,b)=>(b.datum||'').localeCompare(a.datum||''));
-  const filtered = all.filter(t => (!typeF||t.type===typeF) && (!bronF||t.bron===bronF));
-  const bronCls = b => b==='discogs'?'pgold':b==='vinted'?'pt':'pgray';
-  const bronLabel = b => b==='discogs'?'Discogs':b==='vinted'?'Vinted':'Handm.';
-  document.getElementById('trans-body').innerHTML = filtered.length
-    ? filtered.map(t => {
-        const isV = t.type==='verkoop';
-        const mp = isV && t.ink>0 ? Math.round((t.prijs-t.ink)/t.prijs*100) : null;
-        return `<tr>
-          <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${t.album}">${t.album}</td>
-          <td><span class="pill ${bronCls(t.bron)}">${bronLabel(t.bron)}</span></td>
-          <td><span class="pill ${isV?'pg':'pa'}">${isV?'Verk.':'Ink.'}</span></td>
-          <td style="color:${isV?'var(--green)':'var(--amber)'};">${isV?'+':'-'}€${Math.round(t.prijs)}</td>
-          <td>${mp!==null?`<span class="pill pgold">${mp}%</span>`:'—'}</td>
-          <td style="color:var(--muted);font-size:11px;">${t.datum||'—'}</td>
-        </tr>`;
-      }).join('')
-    : '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted);">Geen transacties gevonden</td></tr>';
-}
-
-function addTrans() {
-  const album = document.getElementById('inp-album').value.trim();
-  const type = document.getElementById('inp-type').value;
-  const bron = document.getElementById('inp-bron').value;
-  const datum = document.getElementById('inp-datum').value||today();
-  const prijs = parseFloat(document.getElementById('inp-prijs').value);
-  const ink = parseFloat(document.getElementById('inp-ink').value)||0;
-  const genre = document.getElementById('inp-genre').value.trim()||'Overig';
-  if (!album||isNaN(prijs)) return;
-  transactions.unshift({album,type,bron,datum,prijs,ink,genre});
-  save('vinyl-transactions', transactions);
-  document.getElementById('inp-album').value='';
-  document.getElementById('inp-prijs').value='';
-  document.getElementById('inp-ink').value='';
-  renderTransTable(); renderDashTrans(); renderMetrics();
-}
-
-// ---- Kosten ----
-function renderKosten() {
-  const cat = document.getElementById('kosten-filter').value;
-  const filtered = cat ? kosten.filter(k=>k.categorie===cat) : kosten;
-  const totaal = filtered.reduce((a,k)=>a+(k.bedrag||0),0);
-  const cats = [...new Set(kosten.map(k=>k.categorie).filter(Boolean))];
-  document.getElementById('kosten-filter').innerHTML = '<option value="">Alle categorieën</option>'+cats.map(c=>`<option>${c}</option>`).join('');
-
-  const inkomsten = transactions.filter(t=>t.type==='verkoop').reduce((a,t)=>a+(t.prijs||0),0)
-    + vintedTrans.filter(t=>t.type==='verkoop').reduce((a,t)=>a+(t.prijs||0),0)
-    + bulkMaanden.reduce((a,b)=>a+(b.omzet||0),0);
-  const inkoop = transactions.filter(t=>t.type==='inkoop').reduce((a,t)=>a+(t.prijs||0),0)
-    + bulkMaanden.reduce((a,b)=>a+(b.ink||0),0);
-  const brutow = inkomsten - inkoop;
-  const nettow = brutow - kosten.reduce((a,k)=>a+(k.bedrag||0),0);
-
-  document.getElementById('kosten-metrics').innerHTML = `
-    <div class="metric"><div class="metric-label">Totale kosten</div><div class="metric-value metric-down">€${Math.round(totaal).toLocaleString('nl-NL')}</div></div>
-    <div class="metric"><div class="metric-label">Bruto winst</div><div class="metric-value metric-up">€${Math.round(brutow).toLocaleString('nl-NL')}</div></div>
-    <div class="metric"><div class="metric-label">Netto winst</div><div class="metric-value ${nettow>=0?'metric-up':'metric-down'}">€${Math.round(Math.abs(nettow)).toLocaleString('nl-NL')}</div></div>
-    <div class="metric"><div class="metric-label">Kostenposten</div><div class="metric-value">${kosten.length}</div></div>
-  `;
-  document.getElementById('kosten-body').innerHTML = filtered.length
-    ? filtered.sort((a,b)=>(b.datum||'').localeCompare(a.datum||'')).map(k => `<tr>
-        <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.omschrijving}</td>
-        <td><span class="pill pa">${k.categorie||'Overig'}</span></td>
-        <td style="color:var(--red);">-€${parseFloat(k.bedrag).toFixed(2)}</td>
-        <td style="color:var(--muted);">${k.datum||'—'}</td>
-      </tr>`).join('')
-    : '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--muted);">Geen kosten — verbind e-Boekhouden of voeg handmatig toe</td></tr>';
-  document.getElementById('kosten-footer').textContent = `${filtered.length} kostenposten · Totaal: €${totaal.toFixed(2)}`;
-}
-
-function filterKosten() { renderKosten(); }
-
-function addKost() {
-  const omschrijving = document.getElementById('kost-omschr').value.trim();
-  const bedrag = parseFloat(document.getElementById('kost-bedrag').value);
-  const datum = document.getElementById('kost-datum').value||today();
-  const categorie = document.getElementById('kost-cat').value.trim()||'Overig';
-  if (!omschrijving||isNaN(bedrag)) return;
-  kosten.unshift({omschrijving,bedrag,datum,categorie,bron:'handmatig'});
-  save('vinyl-kosten', kosten);
-  document.getElementById('kost-omschr').value='';
-  document.getElementById('kost-bedrag').value='';
-  document.getElementById('kost-cat').value='';
-  renderKosten(); renderMetrics();
-}
-
-// ---- Analyse ----
-function renderAnalyse() {
-  const allV = [...transactions,...vintedTrans].filter(t=>t.type==='verkoop');
-
-  // Top artiesten
-  const artistMap = {};
-  allV.forEach(t => {
-    const a = t.album.split('–')[0].split('-')[0].trim()||'Onbekend';
-    if (!artistMap[a]) artistMap[a] = {count:0,omzet:0};
-    artistMap[a].count++;
-    artistMap[a].omzet += t.prijs||0;
-  });
-  const topA = Object.entries(artistMap).sort((a,b)=>b[1].count-a[1].count).slice(0,10);
-  document.getElementById('top-artiesten').innerHTML = topA.length
-    ? topA.map(([naam,d],i) => `<div class="rank-row">
-        <div class="rank-num">${i+1}</div>
-        <div style="flex:1;overflow:hidden;">
-          <div style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${naam}</div>
-          <div style="font-size:10px;color:var(--muted);">${d.count}x verkocht · €${Math.round(d.omzet).toLocaleString('nl-NL')} omzet</div>
-        </div>
-        <span class="pill pg">${d.count}x</span>
-      </div>`).join('')
-    : '<div style="color:var(--muted);font-size:12px;padding:1rem;">Nog geen verkoopdata</div>';
-
-  // Top albums
-  const albumMap = {};
-  allV.forEach(t => {
-    const k = t.album;
-    if (!albumMap[k]) albumMap[k] = {count:0,omzet:0,prijzen:[]};
-    albumMap[k].count++;
-    albumMap[k].omzet += t.prijs||0;
-    albumMap[k].prijzen.push(t.prijs||0);
-  });
-  const topAlb = Object.entries(albumMap).sort((a,b)=>b[1].omzet-a[1].omzet).slice(0,10);
-  document.getElementById('top-albums').innerHTML = topAlb.length
-    ? topAlb.map(([naam,d],i) => `<div class="rank-row">
-        <div class="rank-num">${i+1}</div>
-        <div style="flex:1;overflow:hidden;">
-          <div style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${naam}">${naam}</div>
-          <div style="font-size:10px;color:var(--muted);">${d.count}x · gem. €${Math.round(d.omzet/d.count)}</div>
-        </div>
-        <span class="pill pgold">€${Math.round(d.omzet)}</span>
-      </div>`).join('')
-    : '<div style="color:var(--muted);font-size:12px;padding:1rem;">Nog geen verkoopdata</div>';
-
-  // Trend chart
-  if (trendChart) trendChart.destroy();
-  const now = new Date();
-  const mLabels = ['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'].slice(0,now.getMonth()+1);
-  const dData = mLabels.map((_,i) => sumByMonth(transactions, i, 'verkoop'));
-  const vData = mLabels.map((_,i) => sumByMonth(vintedTrans, i, 'verkoop') + getBulkMonth(i,'omzet'));
-  trendChart = new Chart(document.getElementById('trendChart'), {
-    type:'line',
-    data:{labels:mLabels,datasets:[
-      {label:'Discogs',data:dData,borderColor:'#c8a96e',backgroundColor:'rgba(200,169,110,0.08)',tension:0.4,fill:true,pointRadius:4,pointBackgroundColor:'#c8a96e'},
-      {label:'Vinted',data:vData,borderColor:'#3ecfcf',backgroundColor:'rgba(62,207,207,0.08)',tension:0.4,fill:true,pointRadius:4,pointBackgroundColor:'#3ecfcf'},
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#7a7875',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},
-              y:{ticks:{color:'#7a7875',font:{size:10},callback:v=>'€'+v},grid:{color:'rgba(255,255,255,0.04)'}}}}
-  });
-
-  // Prijstrends
-  const multiV = Object.entries(albumMap).filter(([_,d])=>d.count>=2);
-  const stijgers = multiV.map(([naam,d]) => {
-    const sorted = d.prijzen; const trend = sorted[sorted.length-1]-sorted[0];
-    return {naam,trend,gem:d.omzet/d.count};
-  }).filter(d=>d.trend>0).sort((a,b)=>b.trend-a.trend).slice(0,5);
-  const dalers = multiV.map(([naam,d]) => {
-    const sorted = d.prijzen; const trend = sorted[sorted.length-1]-sorted[0];
-    return {naam,trend,gem:d.omzet/d.count};
-  }).filter(d=>d.trend<0).sort((a,b)=>a.trend-b.trend).slice(0,5);
-
-  const trendHTML = (arr, isUp) => arr.length ? arr.map(d => `
-    <div class="rank-row">
-      <div style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${d.naam}">${d.naam}</div>
-      <span class="pill ${isUp?'pg':'pr'}">${isUp?'+':''}€${Math.round(d.trend)}</span>
-    </div>`).join('') : '<div style="color:var(--muted);font-size:12px;padding:1rem;">Meer verkoopdata nodig (min. 2x hetzelfde album)</div>';
-
-  document.getElementById('prijsstijgers').innerHTML = trendHTML(stijgers, true);
-  document.getElementById('prijsdalers').innerHTML = trendHTML(dalers, false);
-
-  // Inzichten
-  const totalOmzet = allV.reduce((a,t)=>a+(t.prijs||0),0);
-  const gemPrijs = allV.length > 0 ? totalOmzet/allV.length : 0;
-  const discogsOmzet = transactions.filter(t=>t.type==='verkoop').reduce((a,t)=>a+(t.prijs||0),0);
-  const vintedOmzet = vintedTrans.reduce((a,t)=>a+(t.prijs||0),0)+bulkMaanden.reduce((a,b)=>a+(b.omzet||0),0);
-  const bestKanaal = discogsOmzet >= vintedOmzet ? 'Discogs' : 'Vinted';
-  const insights = [
-    allV.length > 0 ? `<strong>Gemiddelde verkoopprijs:</strong> €${gemPrijs.toFixed(2)} over ${allV.length} verkopen.` : null,
-    topA.length > 0 ? `<strong>Best verkochte artiest:</strong> ${topA[0][0]} met ${topA[0][1].count} verkopen.` : null,
-    totalOmzet > 0 ? `<strong>Beste verkoopkanaal:</strong> ${bestKanaal} (€${Math.round(Math.max(discogsOmzet,vintedOmzet)).toLocaleString('nl-NL')} omzet).` : null,
-    stijgers.length > 0 ? `<strong>Grootste prijsstijger:</strong> ${stijgers[0].naam} (+€${Math.round(stijgers[0].trend)}).` : null,
-  ].filter(Boolean);
-  document.getElementById('inzichten').innerHTML = insights.length
-    ? insights.map(i=>`<div class="insight-box">${i}</div>`).join('')
-    : '<div class="insight-box">Voer meer verkoopdata in voor automatische inzichten.</div>';
-}
-
-// ---- Discogs ----
-async function fetchAllPages(url, token, key) {
-  let items=[], page=1, pages=1;
-  while (page<=pages) {
-    const res = await fetch(`${url}&page=${page}&per_page=100`, {headers:{'User-Agent':'VinylDashboard/1.0','Authorization':`Discogs token=${token}`}});
-    if (!res.ok) throw new Error('Discogs HTTP '+res.status);
-    const data = await res.json();
-    items = items.concat(data[key]||[]);
-    pages = data.pagination?.pages||1; page++;
   }
   return items;
 }
-
-async function connectDiscogs() {
-  const token = document.getElementById('inp-discogs-token').value.trim();
-  if (!token) { setStatus('discogs','Vul je Discogs token in.','err'); return; }
-  setStatus('discogs','Inventaris ophalen...','loading');
-  try {
-    const listings = await fetchAllPages(`https://api.discogs.com/users/${encodeURIComponent(USERNAME)}/inventory?token=${encodeURIComponent(token)}&status=For+Sale`, token, 'listings');
-    const forSale = listings.map(l => ({artist:l.release?.artist||'—',title:l.release?.title||'—',year:l.release?.year||'—',genre:l.release?.genres?.[0]||'Overig',price:parseFloat(l.price?.value)||0,condition:l.condition||'—',status:'Te koop',ink:0,source:'inventaris'}));
-    setStatus('discogs',`${forSale.length} te koop — collectie ophalen...`,'loading');
-    const releases = await fetchAllPages(`https://api.discogs.com/users/${encodeURIComponent(USERNAME)}/collection/folders/0/releases?token=${encodeURIComponent(token)}`, token, 'releases');
-    const fst = new Set(forSale.map(i=>i.artist+i.title));
-    const coll = releases.filter(r=>!fst.has((r.basic_information?.artists?.[0]?.name||'')+(r.basic_information?.title||''))).map(r=>({artist:r.basic_information?.artists?.[0]?.name||'—',title:r.basic_information?.title||'—',year:r.basic_information?.year||'—',genre:r.basic_information?.genres?.[0]||'Overig',price:0,condition:'—',status:'Collectie',ink:0,source:'collectie'}));
-    inventory = [...forSale,...coll];
-
-    setStatus('discogs','Orders ophalen...','loading');
-    let orders = [];
-    try { orders = await fetchAllPages(`https://api.discogs.com/marketplace/orders?token=${encodeURIComponent(token)}&status=Shipped&sort=created&sort_order=desc`, token, 'orders'); } catch(e) {}
-    if (orders.length > 0) {
-      const existing = new Set(transactions.filter(t=>t.bron==='discogs').map(t=>t.id));
-      const newOrders = orders.filter(o=>!existing.has(o.id)).map(o => ({album:(o.items?.[0]?.release?.artist||'—')+' – '+(o.items?.[0]?.release?.title||'—'),type:'verkoop',prijs:parseFloat(o.total?.value)||0,ink:0,datum:(o.created||'').slice(0,10),bron:'discogs',id:o.id}));
-      transactions = [...newOrders,...transactions.filter(t=>t.bron!=='discogs')].sort((a,b)=>(b.datum||'').localeCompare(a.datum||''));
-      save('vinyl-transactions', transactions);
-    }
-    document.getElementById('discogs-badge').className='badge-connected';
-    document.getElementById('discogs-badge').innerHTML='<div class="badge-dot"></div> Verbonden';
-    setStatus('discogs',`${forSale.length} te koop · ${coll.length} collectie · ${orders.length} orders ✓`,'ok');
-    document.getElementById('last-sync').textContent='Sync: '+new Date().toLocaleTimeString('nl-NL');
-    populateGenreFilter();
-    if (bertusConnected) checkBertusStock();
-    render();
-  } catch(e) { setStatus('discogs',e.message,'err'); }
-}
-
-// ---- e-Boekhouden ----
-async function connectEboekhouden() {
-  const user = document.getElementById('inp-eb-user').value.trim();
-  const token = document.getElementById('inp-eb-token').value.trim();
-  if (!user||!token) { setStatus('eb','Vul gebruikersnaam en token in.','err'); return; }
-  setStatus('eb','Verbinden met e-Boekhouden...','loading');
-  try {
-    // e-Boekhouden uses a SOAP/REST API — we fetch mutaties (transactions)
-    const url = `https://soap.e-boekhouden.nl/boekhouden/webservice.asmx`;
-    // Attempt REST endpoint if available
-    const res = await fetch(`https://api.e-boekhouden.nl/v1/mutaties?username=${encodeURIComponent(user)}&token=${encodeURIComponent(token)}&categorie=Inkoop`, {
-      headers:{'Accept':'application/json','Authorization':`Bearer ${token}`}
-    });
-    if (!res.ok) throw new Error('e-Boekhouden antwoordde met HTTP '+res.status+'. Controleer je inloggegevens.');
-    const data = await res.json();
-    const mutaties = (data.mutaties||data.Mutaties||data||[]).map(m => ({
-      omschrijving: m.omschrijving||m.Omschrijving||m.description||'—',
-      bedrag: Math.abs(parseFloat(m.bedrag||m.Bedrag||m.amount)||0),
-      datum: (m.datum||m.Datum||m.date||'').slice(0,10),
-      categorie: m.categorie||m.Categorie||m.category||'Overig',
-      bron: 'e-boekhouden',
-    }));
-    const existing = new Set(kosten.filter(k=>k.bron==='e-boekhouden').map(k=>k.omschrijving+k.datum));
-    const nieuw = mutaties.filter(m=>!existing.has(m.omschrijving+m.datum));
-    kosten = [...nieuw,...kosten.filter(k=>k.bron!=='e-boekhouden')].sort((a,b)=>(b.datum||'').localeCompare(a.datum||''));
-    save('vinyl-kosten', kosten);
-    document.getElementById('eboekhouden-badge').className='badge-connected';
-    document.getElementById('eboekhouden-badge').innerHTML='<div class="badge-dot"></div> Verbonden';
-    setStatus('eb',`${mutaties.length} kostenposten geladen ✓`,'ok');
-    renderKosten(); renderMetrics();
-  } catch(e) {
-    setStatus('eb','Fout: '+e.message+' — voeg kosten handmatig toe op het Kosten-tabblad.','err');
-  }
-}
-
-// ---- Bertus ----
-async function connectBertus() {
-  const token = document.getElementById('inp-bertus-token').value.trim();
-  if (!token) { setStatus('bertus','Vul je Bertus token in.','err'); return; }
-  setStatus('bertus','Verbinden met Bertus...','loading');
-  try {
-    const res = await fetch('https://api.bertus.nl/v1/stock?format=json', {
-      headers:{'Authorization':`Bearer ${token}`,'Accept':'application/json'}
-    });
-    if (!res.ok) throw new Error('Bertus API HTTP '+res.status);
-    const data = await res.json();
-    const stockItems = data.items||data.products||[];
-    const stockMap = {};
-    stockItems.forEach(p => {
-      const key = (p.ean||p.barcode||p.title||'').toLowerCase();
-      const titleKey = (p.title||'').toLowerCase();
-      const price = parseFloat(p.inkoopprijs||p.price_purchase||p.cost||p.purchase_price||0);
-      if (key) stockMap[key] = price;
-      if (titleKey) stockMap[titleKey] = price;
-    });
-    inventory = inventory.map(item => {
-      const titleKey = item.title.toLowerCase();
-      const fullKey = (item.artist+' '+item.title).toLowerCase();
-      const inStock = fullKey in stockMap || titleKey in stockMap;
-      const bertusPrice = stockMap[fullKey] || stockMap[titleKey] || 0;
-      return {...item, bertus: inStock, bertusPrice};
-    });
-    bertusConnected = true; bertusToken = token;
-    document.getElementById('bertus-badge').className='badge-connected';
-    document.getElementById('bertus-badge').innerHTML='<div class="badge-dot"></div> Verbonden';
-    setStatus('bertus',`${stockSet.size} Bertus-titels geladen ✓`,'ok');
-    renderStockTable();
-  } catch(e) {
-    setStatus('bertus','Fout: '+e.message,'err');
-  }
-}
-
-async function checkBertusStock() {
-  if (!bertusConnected||!bertusToken) return;
-  await connectBertus();
-}
-
-// ---- Helpers ----
-function setStatus(key, msg, type) {
-  const ids = {discogs:'discogs-status', eb:'eb-status', bertus:'bertus-status'};
-  const el = document.getElementById(ids[key]);
-  if (!el) return;
-  el.className = 'status-msg status-'+type;
-  el.textContent = msg;
-}
-
-// ---- Demo ----
-function loadDemo() {
-  inventory = [
-    {artist:'Pink Floyd',title:'The Wall',year:1979,genre:'Rock',price:45,condition:'VG+',status:'Te koop',ink:18},
-    {artist:'Miles Davis',title:'Kind of Blue',year:1959,genre:'Jazz',price:32,condition:'VG',status:'Te koop',ink:14},
-    {artist:'The Beatles',title:'Abbey Road',year:1969,genre:'Rock',price:55,condition:'NM',status:'Gereserveerd',ink:22},
-    {artist:'Nina Simone',title:'Little Girl Blue',year:1958,genre:'Jazz',price:38,condition:'VG+',status:'Te koop',ink:12},
-    {artist:'David Bowie',title:'Ziggy Stardust',year:1972,genre:'Rock',price:48,condition:'VG',status:'Te koop',ink:20},
-    {artist:'Stevie Wonder',title:'Songs in the Key of Life',year:1976,genre:'Soul',price:48,condition:'VG+',status:'Te koop',ink:19},
-    {artist:'Radiohead',title:'OK Computer',year:1997,genre:'Rock',price:42,condition:'NM',status:'Te koop',ink:18},
-    {artist:'Fleetwood Mac',title:'Rumours',year:1977,genre:'Rock',price:35,condition:'VG',status:'Collectie',ink:15},
-    {artist:'Bob Dylan',title:'Blonde on Blonde',year:1966,genre:'Rock',price:68,condition:'VG+',status:'Te koop',ink:25},
-    {artist:'John Coltrane',title:'A Love Supreme',year:1965,genre:'Jazz',price:75,condition:'VG',status:'Te koop',ink:28},
-  ];
-  transactions = [
-    {album:'Pink Floyd – The Wall',type:'verkoop',prijs:45,ink:18,genre:'Rock',datum:'2026-06-05',bron:'discogs'},
-    {album:'Miles Davis – Kind of Blue',type:'verkoop',prijs:32,ink:14,genre:'Jazz',datum:'2026-06-04',bron:'discogs'},
-    {album:'Lot 8 platen',type:'inkoop',prijs:95,ink:95,genre:'Divers',datum:'2026-06-03',bron:'handmatig'},
-    {album:'Nina Simone – Little Girl Blue',type:'verkoop',prijs:38,ink:12,genre:'Jazz',datum:'2026-06-02',bron:'discogs'},
-    {album:'Pink Floyd – Animals',type:'verkoop',prijs:52,ink:20,genre:'Rock',datum:'2026-05-28',bron:'discogs'},
-    {album:'Pink Floyd – Wish You Were Here',type:'verkoop',prijs:48,ink:18,genre:'Rock',datum:'2026-04-15',bron:'discogs'},
-  ];
-  vintedTrans = [
-    {album:'The Cure – Disintegration',type:'verkoop',prijs:28,ink:10,genre:'Rock',datum:'2026-06-03',bron:'vinted'},
-    {album:'Talking Heads – Remain in Light',type:'verkoop',prijs:35,ink:12,genre:'Rock',datum:'2026-05-20',bron:'vinted'},
-    {album:'Joni Mitchell – Blue',type:'verkoop',prijs:42,ink:15,genre:'Pop',datum:'2026-04-10',bron:'vinted'},
-  ];
-  bulkMaanden = [
-    {jaar:2026,maand:1,omzet:320,ink:140,aantal:11,notitie:'Goede start'},
-    {jaar:2026,maand:2,omzet:285,ink:120,aantal:9,notitie:''},
-    {jaar:2026,maand:3,omzet:410,ink:165,aantal:14,notitie:'Markt Breda'},
-  ];
-  kosten = [
-    {omschrijving:'Verzendkosten januari',bedrag:24.50,datum:'2026-01-31',categorie:'Verzending',bron:'handmatig'},
-    {omschrijving:'Hoes plastic hoesjes (100x)',bedrag:18.00,datum:'2026-02-10',categorie:'Materialen',bron:'handmatig'},
-    {omschrijving:'Marktplaats advertenties',bedrag:12.00,datum:'2026-03-01',categorie:'Marketing',bron:'handmatig'},
-    {omschrijving:'Discogs verkoopcommissie',bedrag:38.50,datum:'2026-04-30',categorie:'Commissie',bron:'handmatig'},
-  ];
-  document.getElementById('discogs-badge').innerHTML='<div style="width:6px;height:6px;border-radius:50%;background:var(--amber);"></div> Demo data';
-  setStatus('discogs','Demo geladen — verbind Discogs voor echte data.','loading');
-  populateGenreFilter();
-  render();
-}
-
-// ---- Init ----
-function render() {
-  renderMetrics(); renderCharts(); renderDashTrans();
-  renderStockTable(); renderTransTable(); renderVintedTrans(); renderBulkTable();
-}
-
-function initDates() {
-  const d = today();
-  ['vt-datum','inp-datum','kost-datum'].forEach(id => { const el=document.getElementById(id); if(el
