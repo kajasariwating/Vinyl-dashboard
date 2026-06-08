@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vinyl Dashboard — Major9.nl</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
+<style>
+:root{
+  --bg:#f5f5f7;--bg2:#ffffff;--bg3:#f5f5f7;--bg4:#e8e8ed;
+  --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.15);
+  --text:#1d1d1f;--muted:#6e6e73;--hint:#aeaeb2;
+  --blue:#0071e3;--blue-dk:#0062c3;
+  --green:#1c8c3c;--red:#c0392b;--amber:#a05c00;
+  --font:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
+  --r:12px;--r-sm:8px;--r-xs:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;-webkit-font-smoothing:antialiased;}
+.app{display:grid;grid-template-columns:240px 1fr;min-height:100vh;}
+
+/* Sidebar */
+.sidebar{background:rgba(255,255,255,0.72);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-right:0.5px solid var(--border);padding:1.25rem 1rem;display:flex;flex-direction:column;gap:1.5rem;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.main{padding:2.5rem 2rem;background:var(--bg);}
+.logo{display:flex;align-items:center;gap:10px;padding-bottom:0.25rem;}
+.logo-icon{width:32px;height:32px;border-radius:7px;background:#1d1d1f;display:flex;align-items:center;justify-content:center;}
+.logo-icon svg{width:18px;height:18px;fill:#fff;}
+.logo-text{font-size:15px;font-weight:600;letter-spacing:-0.3px;color:var(--text);}
+.logo-sub{font-size:11px;color:var(--muted);}
+.nav-label{font-size:11px;font-weight:600;color:var(--muted);padding-left:8px;margin-bottom:2px;}
+.nav{display:flex;flex-direction:column;gap:1px;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:var(--r-sm);cursor:pointer;color:var(--muted);border:none;background:none;font-family:var(--font);font-size:13px;width:100%;text-align:left;transition:background 0.1s;}
+.nav-item:hover{background:rgba(0,0,0,0.05);color:var(--text);}
+.nav-item.active{background:rgba(0,113,227,0.1);color:var(--blue);font-weight:500;}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;}
+.period-group{display:flex;flex-direction:column;gap:1px;}
+.period-btn{padding:7px 8px;border-radius:var(--r-sm);border:none;background:none;color:var(--muted);font-family:var(--font);font-size:13px;cursor:pointer;text-align:left;transition:background 0.1s;width:100%;}
+.period-btn:hover{background:rgba(0,0,0,0.05);color:var(--text);}
+.period-btn.active{background:rgba(0,113,227,0.1);color:var(--blue);font-weight:500;}
+.connect-section{padding-top:1rem;border-top:0.5px solid var(--border);}
+.connect-label{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px;display:block;}
+.badge-connected{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--green);margin-bottom:6px;font-weight:500;}
+.badge-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.badge-disconnected{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);margin-bottom:6px;}
+.token-input{width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--r-xs);padding:7px 10px;color:var(--text);font-family:var(--font);font-size:12px;margin-bottom:5px;-webkit-appearance:none;appearance:none;}
+.token-input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,113,227,0.15);}
+.btn-connect{width:100%;padding:8px 12px;background:var(--blue);color:#fff;border:none;border-radius:20px;font-family:var(--font);font-weight:500;font-size:13px;cursor:pointer;transition:background 0.15s;letter-spacing:-0.1px;}
+.btn-connect:hover{background:var(--blue-dk);}
+.btn-sm{padding:6px 12px;background:transparent;border:0.5px solid var(--border2);border-radius:20px;color:var(--muted);font-family:var(--font);font-size:12px;cursor:pointer;margin-top:4px;width:100%;transition:all 0.1s;}
+.btn-sm:hover{background:var(--bg4);color:var(--text);}
+.status-msg{font-size:11px;margin-top:5px;line-height:1.5;}
+.status-ok{color:var(--green);}.status-err{color:var(--red);}.status-loading{color:var(--blue);}
+
+/* Main */
+.page-header{margin-bottom:2rem;}
+.page-title{font-size:32px;font-weight:700;letter-spacing:-0.8px;color:var(--text);line-height:1.1;}
+.page-sub{color:var(--muted);font-size:13px;margin-top:6px;letter-spacing:-0.1px;}
+.last-sync{font-size:11px;color:var(--hint);}
+
+/* Metrics */
+.metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:2rem;}
+.metric{background:var(--bg2);border-radius:var(--r);padding:1.25rem 1.25rem 1rem;border:none;}
+.metric-label{font-size:12px;font-weight:500;color:var(--muted);margin-bottom:10px;letter-spacing:-0.1px;}
+.metric-value{font-size:24px;font-weight:700;letter-spacing:-0.8px;color:var(--text);line-height:1;}
+.metric-sub{font-size:11px;color:var(--hint);margin-top:6px;}
+.metric-up{color:var(--green);}.metric-down{color:var(--red);}
+
+/* Cards */
+.charts-row{display:grid;grid-template-columns:1.4fr 1fr;gap:12px;margin-bottom:1.5rem;}
+.chart-card,.section-card{background:var(--bg2);border-radius:var(--r);padding:1.5rem;margin-bottom:1.5rem;border:none;}
+.chart-card{margin-bottom:0;}
+.card-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;letter-spacing:-0.3px;}
+.legend{display:flex;gap:14px;font-size:11px;color:var(--muted);}
+.legend span{display:flex;align-items:center;gap:5px;}
+.legend-dot{width:8px;height:8px;border-radius:2px;}
+
+/* Table */
+.table-controls{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.search-input{flex:1;min-width:150px;background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--r-sm);padding:8px 12px;color:var(--text);font-family:var(--font);font-size:13px;}
+.search-input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,113,227,0.12);}
+.filter-select{background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--r-sm);padding:8px 10px;color:var(--text);font-family:var(--font);font-size:13px;-webkit-appearance:none;appearance:none;cursor:pointer;}
+table{width:100%;border-collapse:collapse;}
+th{font-size:11px;font-weight:500;color:var(--muted);padding:8px 14px;text-align:left;border-bottom:0.5px solid var(--border);}
+td{padding:11px 14px;border-bottom:0.5px solid var(--border);color:var(--text);font-size:13px;letter-spacing:-0.1px;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(0,0,0,0.02);}
+.table-footer{font-size:11px;color:var(--hint);margin-top:10px;}
+
+/* Pills */
+.pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;letter-spacing:-0.1px;}
+.pg{background:#e3f5ea;color:#1c6b30;}
+.pa{background:#fef3e2;color:#8a4f00;}
+.pr{background:#fceaea;color:#9e2a2a;}
+.pp{background:#eeecfc;color:#3d36a8;}
+.pt{background:#e0f5f5;color:#006b68;}
+.pgold{background:#e8f1fc;color:#0056b3;}
+.pgray{background:#f0f0f2;color:#6e6e73;}
+
+/* Layout helpers */
+.two-col{display:grid;grid-template-columns:1.5fr 1fr;gap:12px;margin-bottom:1.5rem;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:1.5rem;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;padding-top:14px;border-top:0.5px solid var(--border);}
+.fg label{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-bottom:5px;}
+.fg input,.fg select,.fg textarea{width:100%;background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--r-sm);padding:8px 10px;color:var(--text);font-family:var(--font);font-size:13px;}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,113,227,0.12);}
+.fg.full{grid-column:1/-1;}
+.btn-add{grid-column:1/-1;padding:10px;background:var(--blue);color:#fff;border:none;border-radius:20px;font-family:var(--font);font-weight:500;font-size:13px;cursor:pointer;transition:background 0.15s;}
+.btn-add:hover{background:var(--blue-dk);}
+.btn-action{padding:6px 14px;background:var(--bg3);border:0.5px solid var(--border);border-radius:20px;color:var(--muted);font-family:var(--font);font-size:12px;cursor:pointer;transition:all 0.1s;}
+.btn-action:hover{background:var(--bg4);color:var(--text);}
+
+/* Tabs */
+.tab-row{display:flex;gap:0;margin-bottom:1.5rem;border-bottom:0.5px solid var(--border);}
+.tab-btn{padding:10px 18px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:var(--font);font-size:13px;cursor:pointer;margin-bottom:-0.5px;transition:all 0.1s;}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:500;}
+
+/* Analyse */
+.analyse-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem;}
+.rank-num{font-size:17px;font-weight:700;color:var(--hint);width:28px;flex-shrink:0;}
+.rank-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid var(--border);}
+.rank-row:last-child{border-bottom:none;}
+.insight-box{background:var(--bg3);border-radius:var(--r-sm);padding:1rem 1.25rem;margin-bottom:8px;font-size:13px;line-height:1.6;border-left:2px solid var(--blue);}
+.insight-box strong{color:var(--blue);font-weight:600;}
+
+/* Kosten */
+#kosten-metrics{grid-template-columns:repeat(4,minmax(0,1fr))!important;}
+
+@media(max-width:900px){
+  .app{grid-template-columns:1fr;}
+  .sidebar{position:static;height:auto;-webkit-backdrop-filter:none;backdrop-filter:none;background:#fff;}
+  .metrics{grid-template-columns:repeat(2,1fr);}
+  .charts-row,.two-col,.three-col,.analyse-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="app" onclick="const s=document.getElementById('album-suggest');if(s&&event.target.id!=='inp-album')s.style.display='none'">
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="#fff"/><circle cx="12" cy="12" r="1" fill="#c8a96e"/></svg></div>
+    <div><div class="logo-text">Major9.nl</div><div class="logo-sub">Vinyl Dashboard</div></div>
+  </div>
+
+  <div>
+    <div class="nav-label">Navigatie</div>
+    <div class="nav">
+      <button class="nav-item active" onclick="showPage('dashboard',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard
+      </button>
+      <button class="nav-item" onclick="showPage('voorraad',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 3H8l-2 4h12l-2-4z"/></svg>Voorraad & collectie
+      </button>
+
+      <button class="nav-item" onclick="showPage('transacties',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>Transacties
+      </button>
+      <button class="nav-item" onclick="showPage('analyse',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analyse
+      </button>
+      <button class="nav-item" onclick="showPage('kosten',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>Kosten (e-Boekhouden)
+      </button>
+    </div>
+  </div>
+
+  <div>
+    <div class="nav-label">Periode</div>
+    <div class="period-group">
+      <button class="period-btn" onclick="setPeriod('dag',this)">Vandaag</button>
+      <button class="period-btn active" onclick="setPeriod('week',this)">Deze week</button>
+      <button class="period-btn" onclick="setPeriod('maand',this)">Deze maand</button>
+      <button class="period-btn" onclick="setPeriod('kwartaal',this)">Dit kwartaal</button>
+      <button class="period-btn" onclick="setPeriod('jaar',this)">Dit jaar</button>
+    </div>
+  </div>
+
+  <div class="connect-section">
+    <div class="connect-label">Discogs</div>
+    <div id="discogs-badge" class="badge-disconnected"><div style="width:6px;height:6px;border-radius:50%;background:var(--muted);"></div>Niet verbonden</div>
+    <input id="inp-discogs-token" class="token-input" type="password" placeholder="Discogs token">
+    <button class="btn-connect" onclick="connectDiscogs()">Verbinden</button>
+    <button class="btn-sm" onclick="loadDemo()">Demo data laden</button>
+    <div id="discogs-status" class="status-msg"></div>
+  </div>
+
+  <div class="connect-section">
+    <div class="connect-label">e-Boekhouden</div>
+    <div id="eboekhouden-badge" class="badge-disconnected"><div style="width:6px;height:6px;border-radius:50%;background:var(--muted);"></div>Niet verbonden</div>
+    <input id="inp-eb-user" class="token-input" type="text" placeholder="Gebruikersnaam">
+    <input id="inp-eb-token" class="token-input" type="password" placeholder="Beveiligingscode 1">
+    <input id="inp-eb-token2" class="token-input" type="password" placeholder="Beveiligingscode 2">
+    <button class="btn-connect" onclick="connectEboekhouden()">Verbinden</button>
+    <div id="eb-status" class="status-msg"></div>
+  </div>
+
+  <div class="connect-section">
+    <div class="connect-label">Bertus distributie</div>
+    <div id="bertus-badge" class="badge-disconnected"><div style="width:6px;height:6px;border-radius:50%;background:var(--muted);"></div>Niet verbonden</div>
+    <input id="inp-bertus-user" class="token-input" type="text" placeholder="my.bertus.com e-mail">
+    <input id="inp-bertus-pass" class="token-input" type="password" placeholder="my.bertus.com wachtwoord">
+    <input id="inp-bertus-subkey" class="token-input" type="password" placeholder="Subscription key">
+    <input id="inp-bertus-account" class="token-input" type="text" placeholder="Accountnummer">
+    <input id="inp-bertus-client" class="token-input" type="text" placeholder="Client ID (optioneel)">
+    <button class="btn-connect" onclick="connectBertus()">Verbinden</button>
+    <div id="bertus-status" class="status-msg"></div>
+  </div>
+</aside>
+
+<main class="main">
+
+<!-- DASHBOARD -->
+<div id="page-dashboard">
+  <div class="page-header">
+    <div><div class="page-title">Overzicht</div><div class="page-sub" id="period-label">Deze week</div></div>
+    <div class="last-sync" id="last-sync">—</div>
+  </div>
+  <div class="metrics" id="metrics-row"></div>
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="card-title">Omzet & inkoop
+        <div class="legend">
+          <span><span class="legend-dot" style="background:#c8a96e"></span>Discogs</span>
+          <span><span class="legend-dot" style="background:#3ecfcf"></span>Vinted</span>
+          <span><span class="legend-dot" style="background:#7f77dd"></span>Inkoop</span>
+        </div>
+      </div>
+      <div style="position:relative;height:220px;"><canvas id="omzetChart" role="img" aria-label="Omzet vs inkoop per periode"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="card-title">Marge %</div>
+      <div style="position:relative;height:240px;"><canvas id="margeChart" role="img" aria-label="Marge percentage"></canvas></div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div class="section-card">
+      <div class="card-title">Recente transacties</div>
+      <table>
+        <thead><tr><th>Album</th><th>Bron</th><th>Type</th><th>Prijs</th><th>Marge</th><th>Datum</th></tr></thead>
+        <tbody id="dash-trans-body"></tbody>
+      </table>
+    </div>
+    <div class="section-card">
+      <div class="card-title">Omzet per kanaal</div>
+      <div style="position:relative;height:200px;"><canvas id="kanaalChart" role="img" aria-label="Omzet per verkoopkanaal"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- VOORRAAD -->
+<div id="page-voorraad" style="display:none;">
+  <div class="page-header">
+    <div><div class="page-title">Voorraad & collectie</div><div class="page-sub">Discogs — Major9.nl</div></div>
+    <button class="btn-action" onclick="connectDiscogs()">↻ Verversen</button>
+  </div>
+  <div class="section-card">
+    <div class="table-controls">
+      <input id="stock-search" class="search-input" placeholder="Zoek artiest of album..." oninput="filterStock()">
+      <select id="stock-genre" class="filter-select" onchange="filterStock()"><option value="">Alle genres</option></select>
+      <select id="stock-status" class="filter-select" onchange="filterStock()">
+        <option value="">Alles</option><option value="Te koop">Te koop</option>
+        <option value="Collectie">Collectie</option><option value="Gereserveerd">Gereserveerd</option><option value="Verkocht">Verkocht</option>
+      </select>
+    </div>
+    <table style="table-layout:fixed;">
+      <thead><tr>
+        <th style="width:27%;">Artiest / Album</th><th style="width:7%;">Jaar</th>
+        <th style="width:10%;">Genre</th><th style="width:8%;">Staat</th>
+        <th style="width:10%;">Vraagprijs</th><th style="width:11%;">Bertus inkoop</th><th style="width:13%;">Bertus voorraad</th><th style="width:14%;">Status</th>
+      </tr></thead>
+      <tbody id="stock-body"></tbody>
+    </table>
+    <div class="table-footer" id="stock-count"></div>
+  </div>
+</div>
+
+
+
+<!-- TRANSACTIES -->
+<div id="page-transacties" style="display:none;">
+  <div class="page-header">
+    <div><div class="page-title">Transacties</div><div class="page-sub">Discogs, Vinted &amp; handmatig</div></div>
+  </div>
+
+  <div class="tab-row">
+    <button class="tab-btn active" onclick="showTransTab('invoer',this)">Nieuwe transactie</button>
+    <button class="tab-btn" onclick="showTransTab('bulk',this)">Bulk per periode</button>
+    <button class="tab-btn" onclick="showTransTab('overzicht',this)">Overzicht</button>
+  </div>
+
+  <div id="trans-tab-invoer">
+    <!-- Nieuwe transactie BOVENAAN en groter -->
+    <div class="section-card" style="margin-bottom:1.5rem;">
+      <div class="card-title" style="font-size:16px;">Nieuwe transactie</div>
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:1.5rem;align-items:start;">
+        <!-- Cover art preview -->
+        <div id="cover-preview" style="aspect-ratio:1;border-radius:12px;background:var(--bg3);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;min-height:180px;border:1px dashed var(--border2);">
+          <div style="font-size:40px;margin-bottom:8px;">&#127925;</div>
+          <div style="font-size:11px;color:var(--muted);text-align:center;padding:0 16px;">Zoek een album<br>voor cover art</div>
+        </div>
+        <!-- Formulier -->
+        <div>
+          <div style="position:relative;margin-bottom:12px;">
+            <label style="display:block;font-size:11px;font-weight:500;color:var(--muted);margin-bottom:5px;">Artiest / Album</label>
+            <input id="inp-album" placeholder="Zoek of typ een album..." oninput="filterAlbumSuggest()" autocomplete="off" style="width:100%;background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;color:var(--text);font-family:var(--font);font-size:14px;">
+            <div id="album-suggest" style="display:none;position:absolute;z-index:100;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--r-sm);max-height:280px;overflow-y:auto;width:100%;box-shadow:0 4px 16px rgba(0,0,0,0.12);margin-top:2px;"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+            <div><label style="display:block;font-size:11px;font-weight:500;color:var(--muted);margin-bottom:5px;">Type</label><select id="inp-type" style="width:100%;background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--r-sm);padding:9px 10px;color:var(--text);font-family:var(--font);font-size:13px;"><option value="verkoop">Verkoop</option><option value="inkoop">Inkoop</option></select></div>
+            <div><label style="display:block;font-size:11px;font-weight:500;color:var(--muted);margin-bottom:5px;">Kanaal</label><select id="inp-bron" style="width:100%;background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--r-sm);padding:9px 10px;color:var(--text);font-family:var(--font);font-size:13px;"><option value="vinted">Vinted</option><option value="discogs">Discogs</option><option value="handmatig">Handmatig</option></select></div>
+            <div><label style="display:block;font-size:11px;font-weight:500;color:var(--muted);margin-bottom:5px;">Datum</label><input id="inp-datum" type="date" style="width:100%;background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--r-sm);padding:9px 10px;color:var(--text);font-family:var(--font);font-size:13px;"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+            <div>
+              <label style="display:block;font-size:11px;font-weight:500;color:var(--muted);margin-bottom:5px;">Verkoopprijs incl. BTW (€)</label>
+              <input id="inp-prijs" type="number" step="0.01" placeholder="25.00" oninput="calcMarge()" style="width:100%;background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--r-sm);padding:9px 10px;color:var(--text);font-family:var(--font);font-size:13px;">
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;font-weight:500;color:var(--muted);margin-bottom:5px;">Inkoopprijs excl. BTW (€) → incl: <span id="ink-incl-preview" style="color:var(--text);">—</span></label>
+              <input id="inp-ink" type="number" step="0.01" placeholder="10.00" oninput="calcMarge()" style="width:100%;background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--r-sm);padding:9px 10px;color:var(--text);font-family:var(--font);font-size:13px;">
+            </div>
+            <div>
+              <label style="display:block;font-size:11px;font-weight:500;color:var(--muted);margin-bottom:5px;">Genre</label>
+              <input id="inp-genre" placeholder="bv. Rock" style="width:100%;background:var(--bg3);border:0.5px solid var(--border);border-radius:var(--r-sm);padding:9px 10px;color:var(--text);font-family:var(--font);font-size:13px;">
+            </div>
+          </div>
+          <div id="marge-preview" style="display:none;border-radius:var(--r-sm);padding:12px 16px;font-size:13px;font-weight:500;text-align:center;margin-bottom:12px;transition:background 0.2s;">
+            <span id="mp-label"></span>
+          </div>
+          <button onclick="addTrans()" style="width:100%;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:20px;font-family:var(--font);font-weight:500;font-size:14px;cursor:pointer;">+ Toevoegen</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transactie overzicht ERONDER -->
+    <div class="section-card">
+      <div class="card-title">Transacties
+        <div style="display:flex;gap:6px;">
+          <select id="trans-filter-type" class="filter-select" style="font-size:11px;padding:4px 8px;" onchange="renderTransTable()">
+            <option value="">Alles</option><option value="verkoop">Verkopen</option><option value="inkoop">Inkopen</option>
+          </select>
+          <select id="trans-filter-bron" class="filter-select" style="font-size:11px;padding:4px 8px;" onchange="renderTransTable()">
+            <option value="">Alle kanalen</option><option value="vinted">Vinted</option><option value="discogs">Discogs</option><option value="handmatig">Handmatig</option>
+          </select>
+        </div>
+      </div>
+      <table style="table-layout:fixed;">
+        <thead><tr>
+          <th style="width:6%;">Cover</th><th style="width:28%;">Album</th><th style="width:10%;">Kanaal</th><th style="width:10%;">Type</th><th style="width:12%;">Prijs</th><th style="width:10%;">Marge</th><th style="width:16%;">Datum</th><th style="width:8%;"></th>
+        </tr></thead>
+        <tbody id="trans-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+
+  <div id="trans-tab-bulk" style="display:none;">
+    <div class="two-col">
+      <div class="section-card">
+        <div class="card-title">Bulk per periode</div>
+        <div class="form-grid">
+          <div class="fg"><label>Kanaal</label><select id="bulk-kanaal"><option value="vinted">Vinted</option><option value="discogs">Discogs</option><option value="handmatig">Handmatig</option></select></div>
+          <div class="fg"><label>Periode type</label><select id="bulk-type" onchange="updateBulkPeriod()">
+            <option value="maand">Maand</option><option value="week">Week</option><option value="kwartaal">Kwartaal</option><option value="dag">Dag</option>
+          </select></div>
+          <div class="fg"><label>Jaar</label><select id="bulk-jaar"><option>2024</option><option selected>2025</option><option>2026</option></select></div>
+          <div class="fg" id="bulk-maand-wrap"><label>Maand</label><select id="bulk-maand">
+            <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maart</option><option value="4">April</option><option value="5">Mei</option><option value="6">Juni</option><option value="7">Juli</option><option value="8">Augustus</option><option value="9">September</option><option value="10">Oktober</option><option value="11">November</option><option value="12">December</option>
+          </select></div>
+          <div class="fg" id="bulk-week-wrap" style="display:none;"><label>Week</label><select id="bulk-week">
+            <option value="1">Week 1</option>
+            <option value="2">Week 2</option>
+            <option value="3">Week 3</option>
+            <option value="4">Week 4</option>
+            <option value="5">Week 5</option>
+            <option value="6">Week 6</option>
+            <option value="7">Week 7</option>
+            <option value="8">Week 8</option>
+            <option value="9">Week 9</option>
+            <option value="10">Week 10</option>
+            <option value="11">Week 11</option>
+            <option value="12">Week 12</option>
+            <option value="13">Week 13</option>
+            <option value="14">Week 14</option>
+            <option value="15">Week 15</option>
+            <option value="16">Week 16</option>
+            <option value="17">Week 17</option>
+            <option value="18">Week 18</option>
+            <option value="19">Week 19</option>
+            <option value="20">Week 20</option>
+            <option value="21">Week 21</option>
+            <option value="22">Week 22</option>
+            <option value="23">Week 23</option>
+            <option value="24">Week 24</option>
+            <option value="25">Week 25</option>
+            <option value="26">Week 26</option>
+            <option value="27">Week 27</option>
+            <option value="28">Week 28</option>
+            <option value="29">Week 29</option>
+            <option value="30">Week 30</option>
+            <option value="31">Week 31</option>
+            <option value="32">Week 32</option>
+            <option value="33">Week 33</option>
+            <option value="34">Week 34</option>
+            <option value="35">Week 35</option>
+            <option value="36">Week 36</option>
+            <option value="37">Week 37</option>
+            <option value="38">Week 38</option>
+            <option value="39">Week 39</option>
+            <option value="40">Week 40</option>
+            <option value="41">Week 41</option>
+            <option value="42">Week 42</option>
+            <option value="43">Week 43</option>
+            <option value="44">Week 44</option>
+            <option value="45">Week 45</option>
+            <option value="46">Week 46</option>
+            <option value="47">Week 47</option>
+            <option value="48">Week 48</option>
+            <option value="49">Week 49</option>
+            <option value="50">Week 50</option>
+            <option value="51">Week 51</option>
+            <option value="52">Week 52</option>
+          </select></div>
+          <div class="fg" id="bulk-kwartaal-wrap" style="display:none;"><label>Kwartaal</label><select id="bulk-kwartaal">
+            <option value="1">Q1 (jan-mrt)</option><option value="2">Q2 (apr-jun)</option><option value="3">Q3 (jul-sep)</option><option value="4">Q4 (okt-dec)</option>
+          </select></div>
+          <div class="fg" id="bulk-dag-wrap" style="display:none;"><label>Datum</label><input id="bulk-dag" type="date"></div>
+          <div class="fg"><label>Totale omzet (€)</label><input id="bulk-omzet" type="number" step="0.01" placeholder="350.00"></div>
+          <div class="fg"><label>Totale inkoop (€)</label><input id="bulk-ink" type="number" step="0.01" placeholder="140.00"></div>
+          <div class="fg"><label>Aantal verkopen</label><input id="bulk-aantal" type="number" placeholder="12"></div>
+          <div class="fg"><label>Notitie</label><input id="bulk-notitie" placeholder="bv. goede week"></div>
+          <button class="btn-add" onclick="addBulkMaand()">+ Periode opslaan</button>
+        </div>
+      </div>
+      <div class="section-card">
+        <div class="card-title">Ingevoerde periodes</div>
+        <table style="table-layout:fixed;">
+          <thead><tr><th style="width:16%;">Kanaal</th><th style="width:20%;">Periode</th><th style="width:18%;">Omzet</th><th style="width:16%;">Inkoop</th><th style="width:14%;">Winst</th><th style="width:16%;"></th></tr></thead>
+          <tbody id="bulk-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="trans-tab-overzicht" style="display:none;">
+    <div class="section-card">
+      <div class="card-title">Alle transacties</div>
+      <table style="table-layout:fixed;">
+        <thead><tr>
+          <th style="width:32%;">Album</th><th style="width:12%;">Kanaal</th><th style="width:12%;">Type</th><th style="width:14%;">Prijs</th><th style="width:12%;">Marge</th><th style="width:18%;">Datum</th>
+        </tr></thead>
+        <tbody id="trans-body-all"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="page-analyse" style="display:none;">
+  <div class="page-header">
+    <div><div class="page-title">Analyse</div><div class="page-sub">Trends, bestsellers en opvallende patronen</div></div>
+    <button class="btn-action" onclick="renderAnalyse()">↻ Herberekenen</button>
+  </div>
+
+  <div class="analyse-grid">
+    <div class="section-card">
+      <div class="card-title">Top 10 best verkochte artiesten</div>
+      <div id="top-artiesten"></div>
+    </div>
+    <div class="section-card">
+      <div class="card-title">Top 10 best verkochte albums</div>
+      <div id="top-albums"></div>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="card-title">Omzettrend per maand (dit jaar)
+      <div class="legend">
+        <span><span class="legend-dot" style="background:#c8a96e"></span>Discogs</span>
+        <span><span class="legend-dot" style="background:#3ecfcf"></span>Vinted</span>
+      </div>
+    </div>
+    <div style="position:relative;height:220px;"><canvas id="trendChart" role="img" aria-label="Omzettrend per maand"></canvas></div>
+  </div>
+
+  <div class="analyse-grid">
+    <div class="section-card">
+      <div class="card-title">Prijstrends — stijgers</div>
+      <div id="prijsstijgers"></div>
+    </div>
+    <div class="section-card">
+      <div class="card-title">Prijstrends — dalers</div>
+      <div id="prijsdalers"></div>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="card-title">Inzichten</div>
+    <div id="inzichten"></div>
+  </div>
+</div>
+
+<!-- KOSTEN -->
+<div id="page-kosten" style="display:none;">
+  <div class="page-header">
+    <div><div class="page-title">Kosten</div><div class="page-sub">Gekoppeld aan e-Boekhouden</div></div>
+    <button class="btn-action" onclick="connectEboekhouden()">↻ Verversen</button>
+  </div>
+  <div class="metrics" id="kosten-metrics" style="grid-template-columns:repeat(4,1fr);"></div>
+  <div class="section-card">
+    <div class="card-title">Kostenposten
+      <select id="kosten-filter" class="filter-select" style="font-size:11px;padding:4px 8px;" onchange="filterKosten()">
+        <option value="">Alle categorieën</option>
+      </select>
+    </div>
+    <table style="table-layout:fixed;">
+      <thead><tr><th style="width:35%;">Omschrijving</th><th style="width:20%;">Categorie</th><th style="width:18%;">Bedrag</th><th style="width:27%;">Datum</th></tr></thead>
+      <tbody id="kosten-body"></tbody>
+    </table>
+    <div class="table-footer" id="kosten-footer"></div>
+  </div>
+  <div class="section-card">
+    <div class="card-title">Kosten handmatig toevoegen</div>
+    <div class="form-grid">
+      <div class="fg full"><label>Omschrijving</label><input id="kost-omschr" placeholder="bv. Inkooppartij vinyl markt"></div>
+      <div class="fg"><label>Bedrag (€)</label><input id="kost-bedrag" type="number" step="0.01" placeholder="45.00"></div>
+      <div class="fg"><label>Datum</label><input id="kost-datum" type="date"></div>
+      <div class="fg"><label>Categorie</label><input id="kost-cat" placeholder="bv. Inkoop"></div>
+      <button class="btn-add" onclick="addKost()">+ Kosten toevoegen</button>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script>
+const USERNAME = 'Major9.nl';
+let inventory = [], transactions = [], vintedTrans = [], bulkMaanden = [], kosten = [];
+let currentPeriod = 'week';
+let omzetChart, margeChart, kanaalChart, trendChart;
+let bertusConnected = false, bertusToken = '';
+
+// ---- Storage helpers ----
+function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {} }
+function load(key, def) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch(e) { return def; } }
+
+// ---- Page navigation ----
+function showPage(page, btn) {
+  ['dashboard','voorraad','transacties','analyse','kosten'].forEach(p =>
+    document.getElementById('page-'+p).style.display = p===page ? 'block' : 'none');
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (page==='analyse') renderAnalyse();
+  if (page==='voorraad') renderStockTable();
+  if (page==='transacties') renderTransTable();
+  if (page==='kosten') renderKosten();
+  if (page==='vinted') { renderVintedTrans(); renderBulkTable(); }
+}
+
+function showVintedTab(tab, btn) {
+  ['per-verkoop','per-maand','overzicht'].forEach(t =>
+    document.getElementById('vt-'+t).style.display = t===tab ? 'block' : 'none');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (tab==='overzicht') renderVintedTrans();
+}
+
+// ---- Period ----
+function setPeriod(p, btn) {
+  currentPeriod = p;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const labels = { dag:'Vandaag', week:'Deze week', maand:'Deze maand', kwartaal:'Dit kwartaal', jaar:'Dit jaar' };
+  document.getElementById('period-label').textContent = labels[p];
+  renderMetrics(); renderCharts();
+}
+
+// ---- Date helpers ----
+function today() { return new Date().toISOString().split('T')[0]; }
+function inPeriod(datum, period) {
+  if (!datum) return false;
+  const d = new Date(datum), now = new Date();
+  if (period==='dag') return d.toDateString()===now.toDateString();
+  if (period==='week') {
+    const start = new Date(now); start.setDate(now.getDate()-now.getDay()+1);
+    return d >= start && d <= now;
+  }
+  if (period==='maand') return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
+  if (period==='kwartaal') {
+    const q = Math.floor(now.getMonth()/3);
+    return Math.floor(d.getMonth()/3)===q && d.getFullYear()===now.getFullYear();
+  }
+  if (period==='jaar') return d.getFullYear()===now.getFullYear();
+  return true;
+}
+
+// ---- Metrics ----
+function renderMetrics() {
+  // Omzet = uitsluitend grootboek 8040
+  const totOmzet = kosten.filter(k => k.grootboek==='8040').reduce((a,k) => a+(k.bedrag||0), 0);
+
+  // Inkoop = uitsluitend grootboek 7991
+  const totInkoop = kosten.filter(k => k.grootboek==='7991').reduce((a,k) => a+(k.bedrag||0), 0);
+
+  // Verpakkingskosten = uitsluitend grootboek 7992
+  const totVerpakking = kosten.filter(k => k.grootboek==='7992').reduce((a,k) => a+(k.bedrag||0), 0);
+
+  // Voorraadwaarde = som van alle vraagprijzen (te koop + collectie)
+  // Te koop: vraagprijs; Collectie: mediaan marktwaarde indien beschikbaar, anders 0
+  const voorraadWaarde = inventory.reduce((a,i) => a+(parseFloat(i.price)||parseFloat(i.value)||0), 0);
+
+  // Netto winst/verlies = 8040 - 7991 - 7992
+  const netto = totOmzet - totInkoop - totVerpakking;
+
+  document.getElementById('metrics-row').innerHTML = `
+    <div class="metric"><div class="metric-label">Omzet vinyl</div><div class="metric-value metric-up">€${totOmzet.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="metric-sub">grootboek 8040</div></div>
+    <div class="metric"><div class="metric-label">Inkoop</div><div class="metric-value metric-down">€${totInkoop.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="metric-sub">grootboek 7991</div></div>
+    <div class="metric"><div class="metric-label">Verpakking</div><div class="metric-value metric-down">€${totVerpakking.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="metric-sub">grootboek 7992</div></div>
+    <div class="metric"><div class="metric-label">Voorraadwaarde</div><div class="metric-value" style="color:var(--blue)">€${Math.round(voorraadWaarde).toLocaleString('nl-NL')}</div><div class="metric-sub">max. vraagprijs Discogs</div></div>
+    <div class="metric"><div class="metric-label">Winst / Verlies</div><div class="metric-value ${netto>=0?'metric-up':'metric-down'}">€${Math.abs(netto).toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="metric-sub">${netto>=0?'✓ winst':'✗ verlies'}</div></div>
+  `;
+}
+
+// ---- Charts ----
+function renderCharts() {
+  if (omzetChart) omzetChart.destroy();
+  if (margeChart) margeChart.destroy();
+  if (kanaalChart) kanaalChart.destroy();
+
+  const months = ['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
+  const now = new Date();
+  let labels, discogsData, vintedData, inkData, margeData;
+
+  if (currentPeriod === 'jaar') {
+    labels = months.slice(0, now.getMonth()+1);
+    discogsData = labels.map((_,i) => sumByMonth(transactions, i, 'verkoop'));
+    vintedData = labels.map((_,i) => sumByMonth(vintedTrans, i, 'verkoop') + getBulkMonth(i, 'omzet'));
+    inkData = labels.map((_,i) => sumByMonth([...transactions,...vintedTrans], i, 'inkoop') + getBulkMonth(i, 'ink'));
+    margeData = labels.map((_,i) => {
+      const o = discogsData[i] + vintedData[i], c = inkData[i];
+      return o > 0 ? Math.round((o-c)/o*100) : 0;
+    });
+  } else {
+    const pd = getDemoChartData();
+    labels = pd.labels; discogsData = pd.discogs; vintedData = pd.vinted; inkData = pd.ink; margeData = pd.marge;
+  }
+
+  omzetChart = new Chart(document.getElementById('omzetChart'), {
+    type:'bar',
+    data:{labels, datasets:[
+      {label:'Discogs',data:discogsData,backgroundColor:'#c8a96e',borderRadius:4},
+      {label:'Vinted',data:vintedData,backgroundColor:'#3ecfcf',borderRadius:4},
+      {label:'Inkoop',data:inkData,backgroundColor:'#7f77dd',borderRadius:4},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#6e6e73',font:{size:10}},grid:{color:'rgba(0,0,0,0.06)'}},
+              y:{ticks:{color:'#6e6e73',font:{size:10},callback:v=>'€'+v},grid:{color:'rgba(0,0,0,0.06)'}}}}
+  });
+
+  margeChart = new Chart(document.getElementById('margeChart'), {
+    type:'line',
+    data:{labels,datasets:[{label:'Marge %',data:margeData,borderColor:'#c8a96e',backgroundColor:'rgba(200,169,110,0.1)',tension:0.4,fill:true,pointBackgroundColor:'#c8a96e',pointRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#6e6e73',font:{size:10}},grid:{color:'rgba(0,0,0,0.06)'}},
+              y:{min:0,max:100,ticks:{color:'#6e6e73',font:{size:10},callback:v=>v+'%'},grid:{color:'rgba(0,0,0,0.06)'}}}}
+  });
+
+  const dOmzet = transactions.filter(t=>t.type==='verkoop').reduce((a,t)=>a+(t.prijs||0),0);
+  const vOmzet = vintedTrans.filter(t=>t.type==='verkoop').reduce((a,t)=>a+(t.prijs||0),0) + bulkMaanden.reduce((a,b)=>a+(b.omzet||0),0);
+  kanaalChart = new Chart(document.getElementById('kanaalChart'), {
+    type:'doughnut',
+    data:{labels:['Discogs','Vinted'],datasets:[{data:[Math.round(dOmzet),Math.round(vOmzet)],backgroundColor:['#c8a96e','#3ecfcf'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'65%'}
+  });
+}
+
+function sumByMonth(arr, monthIdx, type) {
+  const now = new Date();
+  return arr.filter(t => t.type===type && t.datum && new Date(t.datum).getFullYear()===now.getFullYear() && new Date(t.datum).getMonth()===monthIdx)
+    .reduce((a,t)=>a+(t.prijs||0),0);
+}
+function getBulkMonth(monthIdx, field) {
+  const now = new Date();
+  const b = bulkMaanden.find(b => b.jaar==now.getFullYear() && b.maand==monthIdx+1);
+  return b ? (b[field]||0) : 0;
+}
+function getDemoChartData() {
+  const sets = {
+    dag:      {labels:['08u','10u','12u','14u','16u','18u'],discogs:[0,15,22,18,20,12],vinted:[0,8,10,5,0,6],ink:[0,8,12,9,8,5],marge:[0,52,55,48,58,60]},
+    week:     {labels:['Ma','Di','Wo','Do','Vr','Za','Zo'],discogs:[45,72,38,95,85,112,40],vinted:[20,30,15,40,35,55,20],ink:[20,30,15,45,40,48,12],marge:[55,58,60,52,53,57,70]},
+    maand:    {labels:['Wk1','Wk2','Wk3','Wk4'],discogs:[410,520,460,450],vinted:[150,200,180,220],ink:[180,210,195,195],marge:[56,59,58,57]},
+    kwartaal: {labels:['Jan','Feb','Mrt'],discogs:[1650,1890,1880],vinted:[600,750,820],ink:[720,810,710],marge:[56,57,62]},
+    jaar:     {labels:['Jan','Feb','Mrt','Apr','Mei','Jun'],discogs:[1650,1890,1880,2100,1950,2300],vinted:[600,750,820,900,850,1100],ink:[720,810,710,850,800,920],marge:[56,57,62,60,61,63]},
+  };
+  return sets[currentPeriod] || sets.week;
+}
+
+// ---- Dashboard recent trans ----
+function renderDashTrans() {
+  const all = [...transactions,...vintedTrans].sort((a,b)=>(b.datum||'').localeCompare(a.datum||'')).slice(0,8);
+  document.getElementById('dash-trans-body').innerHTML = all.map(t => {
+    const isV = t.type==='verkoop';
+    const mp = isV && t.ink>0 ? Math.round((t.prijs-t.ink)/t.prijs*100) : null;
+    const bronCls = t.bron==='discogs'?'pgold':t.bron==='vinted'?'pt':'pgray';
+    const bronLabel = t.bron==='discogs'?'Discogs':t.bron==='vinted'?'Vinted':'Handm.';
+    return `<tr>
+      <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px" title="${t.album}">${t.album}</td>
+      <td><span class="pill ${bronCls}">${bronLabel}</span></td>
+      <td><span class="pill ${isV?'pg':'pa'}">${isV?'Verk.':'Ink.'}</span></td>
+      <td style="color:${isV?'var(--green)':'var(--amber)'};">${isV?'+':'-'}€${Math.round(t.prijs)}</td>
+      <td>${mp!==null?`<span class="pill pgold">${mp}%</span>`:'—'}</td>
+      <td style="color:var(--muted);font-size:11px;">${t.datum||'—'}</td>
+      <td><button onclick="deleteTrans(${idx})" style="padding:3px 8px;background:none;border:0.5px solid var(--border2);border-radius:20px;color:var(--muted);font-size:11px;cursor:pointer;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--muted)'">✕</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--muted);">Nog geen transacties</td></tr>';
+}
+
+// ---- Voorraad ----
+function populateGenreFilter() {
+  const gs = [...new Set(inventory.map(i=>i.genre).filter(Boolean))].sort();
+  document.getElementById('stock-genre').innerHTML = '<option value="">Alle genres</option>' + gs.map(g=>`<option>${g}</option>`).join('');
+}
+
+function filterStock() {
+  const q = document.getElementById('stock-search').value.toLowerCase();
+  const g = document.getElementById('stock-genre').value;
+  const s = document.getElementById('stock-status').value;
+  renderStockTable(inventory.filter(i => (!q||(i.artist+' '+i.title).toLowerCase().includes(q)) && (!g||i.genre===g) && (!s||i.status===s)));
+}
+
+function renderStockTable(list) {
+  list = list !== undefined ? list : inventory;
+  const sc = s => s==='Te koop'?'pg':s==='Collectie'?'pp':s==='Gereserveerd'?'pa':s==='Verkocht'?'pr':'pgray';
+  document.getElementById('stock-body').innerHTML = list.length
+    ? list.map(i => {
+        const bertusInkoop = bertusConnected && i.bertusPrice > 0 ? `<span style="color:var(--amber);">€${parseFloat(i.bertusPrice).toFixed(2)}</span>` : '<span style="color:var(--muted);font-size:10px;">—</span>';
+        const bertusVoorraad = bertusConnected ? `<span class="pill ${i.bertus?'pg':'pr'}">${i.bertus?'Leverbaar':'Niet leverbaar'}</span>` : '<span style="color:var(--muted);font-size:10px;">—</span>';
+        return `<tr>
+          <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${i.artist} – ${i.title}">${i.artist} – ${i.title}</td>
+          <td>${i.year||'—'}</td><td>${i.genre||'—'}</td>
+          <td><span class="pill pp">${i.condition||'—'}</span></td>
+          <td style="color:var(--accent);">${i.price>0?'€'+parseFloat(i.price).toFixed(2):'—'}</td>
+          <td>${bertusInkoop}</td>
+          <td>${bertusVoorraad}</td>
+          <td><span class="pill ${sc(i.status)}">${i.status||'—'}</span></td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted);">Geen items — verbind Discogs</td></tr>';
+  document.getElementById('stock-count').textContent = `${list.length} van ${inventory.length} items`;
+}
+
+// ---- Vinted ----
+function addVintedVerkoop() {
+  const album = document.getElementById('vt-album').value.trim();
+  const prijs = parseFloat(document.getElementById('vt-prijs').value);
+  const ink = parseFloat(document.getElementById('vt-ink').value)||0;
+  const genre = document.getElementById('vt-genre').value.trim()||'Overig';
+  const datum = document.getElementById('vt-datum').value||today();
+  if (!album||isNaN(prijs)) return;
+  vintedTrans.unshift({album,type:'verkoop',prijs,ink,genre,datum,bron:'vinted'});
+  save('vinyl-vinted', vintedTrans);
+  document.getElementById('vt-album').value='';
+  document.getElementById('vt-prijs').value='';
+  document.getElementById('vt-ink').value='';
+  renderVintedTrans(); renderDashTrans(); renderMetrics();
+}
+
+function updateBulkPeriod() {
+  const type = document.getElementById('bulk-type').value;
+  document.getElementById('bulk-maand-wrap').style.display = type==='maand' ? '' : 'none';
+  document.getElementById('bulk-week-wrap').style.display = type==='week' ? '' : 'none';
+  document.getElementById('bulk-kwartaal-wrap').style.display = type==='kwartaal' ? '' : 'none';
+  document.getElementById('bulk-dag-wrap').style.display = type==='dag' ? '' : 'none';
+}
+
+function addBulkMaand() {
+  const type = document.getElementById('bulk-type').value;
+  const jaar = parseInt(document.getElementById('bulk-jaar').value);
+  const maand = type==='maand' ? parseInt(document.getElementById('bulk-maand').value) : null;
+  const week = type==='week' ? parseInt(document.getElementById('bulk-week').value) : null;
+  const kwartaal = type==='kwartaal' ? parseInt(document.getElementById('bulk-kwartaal').value) : null;
+  const dag = type==='dag' ? document.getElementById('bulk-dag').value : null;
+  const omzet = parseFloat(document.getElementById('bulk-omzet').value)||0;
+  const ink = parseFloat(document.getElementById('bulk-ink').value)||0;
+  const aantal = parseInt(document.getElementById('bulk-aantal').value)||0;
+  const notitie = document.getElementById('bulk-notitie').value.trim();
+  const kanaal = document.getElementById('bulk-kanaal') ? document.getElementById('bulk-kanaal').value : 'vinted';
+  const entry = {type, jaar, maand, week, kwartaal, dag, omzet, ink, aantal, notitie, kanaal};
+  const bestaand = bulkMaanden.findIndex(b => b.type===type && b.jaar===jaar &&
+    (type==='maand' ? b.maand===maand :
+     type==='week' ? b.week===week :
+     type==='kwartaal' ? b.kwartaal===kwartaal :
+     b.dag===dag));
+  if (bestaand >= 0) bulkMaanden[bestaand] = entry;
+  else bulkMaanden.push(entry);
+  save('vinyl-bulk', bulkMaanden);
+  document.getElementById('bulk-omzet').value='';
+  document.getElementById('bulk-ink').value='';
+  document.getElementById('bulk-aantal').value='';
+  document.getElementById('bulk-notitie').value='';
+  renderBulkTable(); renderMetrics();
+}
+
+function renderBulkTable() {
+  const maandNamen = ['','Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
+  const sorted = [...bulkMaanden].sort((a,b) => (b.jaar||0)-(a.jaar||0) || (b.maand||b.week||b.kwartaal||0)-(a.maand||a.week||a.kwartaal||0));
+  const periodeLabel = (b) => {
+    if (!b.type || b.type==='maand') return `${maandNamen[b.maand]||''} ${b.jaar}`;
+    if (b.type==='week') return `Week ${b.week} ${b.jaar}`;
+    if (b.type==='kwartaal') return `Q${b.kwartaal} ${b.jaar}`;
+    if (b.type==='dag') return b.dag || b.jaar;
+    return b.jaar;
+  };
+  document.getElementById('bulk-body').innerHTML = sorted.length
+    ? sorted.map((b,i) => {
+        const winst = (b.omzet||0)-(b.ink||0);
+        return `<tr>
+          <td><span class='pill ${b.kanaal==='discogs'?'pgold':b.kanaal==='vinted'?'pt':'pgray'}'>${b.kanaal||'Vinted'}</span></td>
+          <td><span class='pill ${b.kanaal==="discogs"?"pgold":b.kanaal==="vinted"?"pt":"pgray"}'>${b.kanaal||'Vinted'}</span></td><td>${periodeLabel(b)}</td>
+          <td style="color:var(--green);">€${(b.omzet||0).toFixed(2)}</td>
+          <td style="color:var(--amber);">€${(b.ink||0).toFixed(2)}</td>
+          <td style="color:${winst>=0?'var(--green)':'var(--red)'};">€${winst.toFixed(2)}</td>
+          <td>${b.aantal||'—'}</td>
+          <td><button class="btn-action" style="padding:3px 8px;font-size:10px;" onclick="deleteBulk(${i})">✕</button></td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="6" style="text-align:center;padding:1.5rem;color:var(--muted);">Nog geen periodes ingevoerd</td></tr>';
+}
+
+function deleteBulk(idx) {
+  const sorted = [...bulkMaanden].sort((a,b) => b.jaar-a.jaar || b.maand-a.maand);
+  const entry = sorted[idx];
+  bulkMaanden = bulkMaanden.filter(b => !(b.jaar===entry.jaar && b.maand===entry.maand));
+  save('vinyl-bulk', bulkMaanden);
+  renderBulkTable(); renderMetrics();
+}
+
+function renderVintedTrans() {
+  const vtEl = document.getElementById('vinted-trans-body');
+  if (!vtEl) return; // element verwijderd na samenvoeging
+  vtEl.innerHTML = vintedTrans.length
+    ? vintedTrans.map(t => {
+        const mp = t.ink>0 ? Math.round((t.prijs-t.ink)/t.prijs*100) : null;
+        return `<tr>
+          <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${t.album}">${t.album}</td>
+          <td>${t.genre||'—'}</td>
+          <td style="color:var(--green);">+€${Math.round(t.prijs)}</td>
+          <td>${mp!==null?`<span class="pill pgold">${mp}%</span>`:'—'}</td>
+          <td style="color:var(--muted);">${t.datum||'—'}</td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted);">Nog geen Vinted verkopen</td></tr>';
+}
+
+// ---- Transacties ----
+function renderTransTable() {
+  const typeF = document.getElementById('trans-filter-type').value;
+  const bronF = document.getElementById('trans-filter-bron').value;
+  const all = [...transactions,...vintedTrans].sort((a,b)=>(b.datum||'').localeCompare(a.datum||''));
+  const filtered = all.filter(t => (!typeF||t.type===typeF) && (!bronF||t.bron===bronF));
+  const bronCls = b => b==='discogs'?'pgold':b==='vinted'?'pt':'pgray';
+  const bronLabel = b => b==='discogs'?'Discogs':b==='vinted'?'Vinted':'Handm.';
+  const tbody = document.getElementById('trans-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted);">Geen transacties gevonden</td></tr>';
+    return;
+  }
+  filtered.forEach((t) => {
+    const isV = t.type==='verkoop';
+    const mp = isV && t.ink>0 ? Math.round((t.prijs-t.ink)/t.prijs*100) : null;
+    const cover = t.cover || '';
+    const coverHtml = cover
+      ? '<img src="'+cover+'" style="width:36px;height:36px;object-fit:cover;border-radius:4px;">'
+      : '<div style="width:36px;height:36px;border-radius:4px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:14px;">&#127925;</div>';
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>'+coverHtml+'</td>'
+      + '<td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+t.album+'">'+t.album+'</td>'
+      + '<td><span class="pill '+bronCls(t.bron)+'">'+bronLabel(t.bron)+'</span></td>'
+      + '<td><span class="pill '+(isV?'pg':'pa')+'">'+(isV?'Verk.':'Ink.')+'</span></td>'
+      + '<td style="color:'+(isV?'var(--green)':'var(--amber)')+';">'+(isV?'+':'-')+'€'+Math.round(t.prijs)+'</td>'
+      + '<td>'+(mp!==null?'<span class="pill pgold">'+mp+'%</span>':'—')+'</td>'
+      + '<td style="color:var(--muted);font-size:11px;">'+(t.datum||'—')+'</td>'
+      + '<td style="text-align:center;"><button style="padding:3px 8px;background:none;border:0.5px solid var(--border2);border-radius:20px;color:var(--muted);font-size:11px;cursor:pointer;">✕</button></td>';
+    // Store reference to actual transaction object for deletion
+    tr.querySelector('button').addEventListener('click', () => {
+      if (vintedTrans.includes(t)) {
+        vintedTrans = vintedTrans.filter(v => v !== t);
+        save('vinyl-vinted', vintedTrans);
+      } else {
+        transactions = transactions.filter(v => v !== t);
+        save('vinyl-transactions', transactions);
+      }
+      renderTransTable();
+      renderDashTrans();
+      renderMetrics();
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+
+
+function addTrans() {
+  document.getElementById('album-suggest').style.display = 'none';
+  const album = document.getElementById('inp-album').value.trim();
+  const type = document.getElementById('inp-type').value;
+  const bron = document.getElementById('inp-bron').value;
+  const datum = document.getElementById('inp-datum').value||today();
+  const prijs = parseFloat(document.getElementById('inp-prijs').value);
+  const ink = parseFloat(document.getElementById('inp-ink').value)||0;
+  const genre = document.getElementById('inp-genre').value.trim()||'Overig';
+  if (!album||isNaN(prijs)) return;
+  const inkInclBTW = ink * 1.21;
+  const coverUrl = document.getElementById('cover-preview')?.querySelector('img')?.src || '';
+  transactions.unshift({album,type,bron,datum,prijs,ink,inkInclBTW:Math.round(inkInclBTW*100)/100,btw:21,genre,cover:coverUrl});
+  save('vinyl-transactions', transactions);
+  document.getElementById('inp-album').value='';
+  document.getElementById('inp-prijs').value='';
+  document.getElementById('inp-ink').value='';
+  document.getElementById('inp-genre').value='';
+  document.getElementById('marge-preview').style.display='none';
+  const cp = document.getElementById('cover-preview');
+  if (cp) cp.innerHTML = '&#127925;';
+  renderTransTable(); renderDashTrans(); renderMetrics();
+}
+
+// ---- Kosten ----
+function renderKosten() {
+  const cat = document.getElementById('kosten-filter').value;
+  const filtered = cat ? kosten.filter(k=>k.categorie===cat) : kosten;
+  const totaal = filtered.reduce((a,k)=>a+(k.bedrag||0),0);
+  const cats = [...new Set(kosten.map(k=>k.categorie).filter(Boolean))];
+  document.getElementById('kosten-filter').innerHTML = '<option value="">Alle categorieën</option>'+cats.map(c=>`<option>${c}</option>`).join('');
+
+  const ebOmzet = kosten.filter(k=>k.grootboek==='8040').reduce((a,k)=>a+(k.bedrag||0),0);
+  const ebInkoop = kosten.filter(k=>k.grootboek==='7991').reduce((a,k)=>a+(k.bedrag||0),0);
+  const ebVerpakking = kosten.filter(k=>k.grootboek==='7992').reduce((a,k)=>a+(k.bedrag||0),0);
+  const nettow = ebOmzet - ebInkoop - ebVerpakking;
+
+  document.getElementById('kosten-metrics').innerHTML = `
+    <div class="metric"><div class="metric-label">Omzet vinyl (8040)</div><div class="metric-value metric-up">€${ebOmzet.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})}</div></div>
+    <div class="metric"><div class="metric-label">Inkoop (7991)</div><div class="metric-value metric-down">€${ebInkoop.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})}</div></div>
+    <div class="metric"><div class="metric-label">Verpakking (7992)</div><div class="metric-value metric-down">€${ebVerpakking.toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})}</div></div>
+    <div class="metric"><div class="metric-label">Winst / Verlies</div><div class="metric-value ${nettow>=0?'metric-up':'metric-down'}">€${Math.abs(nettow).toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})}</div><div class="metric-sub">${nettow>=0?'✓ winst':'✗ verlies'}</div></div>
+  `;
+  document.getElementById('kosten-body').innerHTML = filtered.length
+    ? filtered.sort((a,b)=>(b.datum||'').localeCompare(a.datum||'')).map(k => `<tr>
+        <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.omschrijving}</td>
+        <td><span class="pill pa">${k.categorie||'Overig'}</span></td>
+        <td style="color:var(--red);">-€${parseFloat(k.bedrag).toFixed(2)}</td>
+        <td style="color:var(--muted);">${k.datum||'—'}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--muted);">Geen kosten — verbind e-Boekhouden of voeg handmatig toe</td></tr>';
+  document.getElementById('kosten-footer').textContent = `${filtered.length} kostenposten · Totaal: €${totaal.toFixed(2)}`;
+}
+
+function filterKosten() { renderKosten(); }
+
+function addKost() {
+  const omschrijving = document.getElementById('kost-omschr').value.trim();
+  const bedrag = parseFloat(document.getElementById('kost-bedrag').value);
+  const datum = document.getElementById('kost-datum').value||today();
+  const categorie = document.getElementById('kost-cat').value.trim()||'Overig';
+  if (!omschrijving||isNaN(bedrag)) return;
+  kosten.unshift({omschrijving,bedrag,datum,categorie,bron:'handmatig'});
+  save('vinyl-kosten', kosten);
+  document.getElementById('kost-omschr').value='';
+  document.getElementById('kost-bedrag').value='';
+  document.getElementById('kost-cat').value='';
+  renderKosten(); renderMetrics();
+}
+
+// ---- Analyse ----
+function renderAnalyse() {
+  const allV = [...transactions,...vintedTrans].filter(t=>t.type==='verkoop');
+
+  // Top artiesten
+  const artistMap = {};
+  allV.forEach(t => {
+    const a = t.album.split('–')[0].split('-')[0].trim()||'Onbekend';
+    if (!artistMap[a]) artistMap[a] = {count:0,omzet:0};
+    artistMap[a].count++;
+    artistMap[a].omzet += t.prijs||0;
+  });
+  const topA = Object.entries(artistMap).sort((a,b)=>b[1].count-a[1].count).slice(0,10);
+  document.getElementById('top-artiesten').innerHTML = topA.length
+    ? topA.map(([naam,d],i) => `<div class="rank-row">
+        <div class="rank-num">${i+1}</div>
+        <div style="flex:1;overflow:hidden;">
+          <div style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${naam}</div>
+          <div style="font-size:10px;color:var(--muted);">${d.count}x verkocht · €${Math.round(d.omzet).toLocaleString('nl-NL')} omzet</div>
+        </div>
+        <span class="pill pg">${d.count}x</span>
+      </div>`).join('')
+    : '<div style="color:var(--muted);font-size:12px;padding:1rem;">Nog geen verkoopdata</div>';
+
+  // Top albums
+  const albumMap = {};
+  allV.forEach(t => {
+    const k = t.album;
+    if (!albumMap[k]) albumMap[k] = {count:0,omzet:0,prijzen:[]};
+    albumMap[k].count++;
+    albumMap[k].omzet += t.prijs||0;
+    albumMap[k].prijzen.push(t.prijs||0);
+  });
+  const topAlb = Object.entries(albumMap).sort((a,b)=>b[1].omzet-a[1].omzet).slice(0,10);
+  document.getElementById('top-albums').innerHTML = topAlb.length
+    ? topAlb.map(([naam,d],i) => `<div class="rank-row">
+        <div class="rank-num">${i+1}</div>
+        <div style="flex:1;overflow:hidden;">
+          <div style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${naam}">${naam}</div>
+          <div style="font-size:10px;color:var(--muted);">${d.count}x · gem. €${Math.round(d.omzet/d.count)}</div>
+        </div>
+        <span class="pill pgold">€${Math.round(d.omzet)}</span>
+      </div>`).join('')
+    : '<div style="color:var(--muted);font-size:12px;padding:1rem;">Nog geen verkoopdata</div>';
+
+  // Trend chart
+  if (trendChart) trendChart.destroy();
+  const now = new Date();
+  const mLabels = ['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'].slice(0,now.getMonth()+1);
+  const dData = mLabels.map((_,i) => sumByMonth(transactions, i, 'verkoop'));
+  const vData = mLabels.map((_,i) => sumByMonth(vintedTrans, i, 'verkoop') + getBulkMonth(i,'omzet'));
+  trendChart = new Chart(document.getElementById('trendChart'), {
+    type:'line',
+    data:{labels:mLabels,datasets:[
+      {label:'Discogs',data:dData,borderColor:'#c8a96e',backgroundColor:'rgba(200,169,110,0.08)',tension:0.4,fill:true,pointRadius:4,pointBackgroundColor:'#c8a96e'},
+      {label:'Vinted',data:vData,borderColor:'#3ecfcf',backgroundColor:'rgba(62,207,207,0.08)',tension:0.4,fill:true,pointRadius:4,pointBackgroundColor:'#3ecfcf'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#6e6e73',font:{size:10}},grid:{color:'rgba(0,0,0,0.06)'}},
+              y:{ticks:{color:'#6e6e73',font:{size:10},callback:v=>'€'+v},grid:{color:'rgba(0,0,0,0.06)'}}}}
+  });
+
+  // Prijstrends
+  const multiV = Object.entries(albumMap).filter(([_,d])=>d.count>=2);
+  const stijgers = multiV.map(([naam,d]) => {
+    const sorted = d.prijzen; const trend = sorted[sorted.length-1]-sorted[0];
+    return {naam,trend,gem:d.omzet/d.count};
+  }).filter(d=>d.trend>0).sort((a,b)=>b.trend-a.trend).slice(0,5);
+  const dalers = multiV.map(([naam,d]) => {
+    const sorted = d.prijzen; const trend = sorted[sorted.length-1]-sorted[0];
+    return {naam,trend,gem:d.omzet/d.count};
+  }).filter(d=>d.trend<0).sort((a,b)=>a.trend-b.trend).slice(0,5);
+
+  const trendHTML = (arr, isUp) => arr.length ? arr.map(d => `
+    <div class="rank-row">
+      <div style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${d.naam}">${d.naam}</div>
+      <span class="pill ${isUp?'pg':'pr'}">${isUp?'+':''}€${Math.round(d.trend)}</span>
+    </div>`).join('') : '<div style="color:var(--muted);font-size:12px;padding:1rem;">Meer verkoopdata nodig (min. 2x hetzelfde album)</div>';
+
+  document.getElementById('prijsstijgers').innerHTML = trendHTML(stijgers, true);
+  document.getElementById('prijsdalers').innerHTML = trendHTML(dalers, false);
+
+  // Inzichten
+  const totalOmzet = allV.reduce((a,t)=>a+(t.prijs||0),0);
+  const gemPrijs = allV.length > 0 ? totalOmzet/allV.length : 0;
+  const discogsOmzet = transactions.filter(t=>t.type==='verkoop').reduce((a,t)=>a+(t.prijs||0),0);
+  const vintedOmzet = vintedTrans.reduce((a,t)=>a+(t.prijs||0),0)+bulkMaanden.reduce((a,b)=>a+(b.omzet||0),0);
+  const bestKanaal = discogsOmzet >= vintedOmzet ? 'Discogs' : 'Vinted';
+  const insights = [
+    allV.length > 0 ? `<strong>Gemiddelde verkoopprijs:</strong> €${gemPrijs.toFixed(2)} over ${allV.length} verkopen.` : null,
+    topA.length > 0 ? `<strong>Best verkochte artiest:</strong> ${topA[0][0]} met ${topA[0][1].count} verkopen.` : null,
+    totalOmzet > 0 ? `<strong>Beste verkoopkanaal:</strong> ${bestKanaal} (€${Math.round(Math.max(discogsOmzet,vintedOmzet)).toLocaleString('nl-NL')} omzet).` : null,
+    stijgers.length > 0 ? `<strong>Grootste prijsstijger:</strong> ${stijgers[0].naam} (+€${Math.round(stijgers[0].trend)}).` : null,
+  ].filter(Boolean);
+  document.getElementById('inzichten').innerHTML = insights.length
+    ? insights.map(i=>`<div class="insight-box">${i}</div>`).join('')
+    : '<div class="insight-box">Voer meer verkoopdata in voor automatische inzichten.</div>';
+}
+
+// ---- Discogs ----
+async function fetchAllPages(url, token, key) {
+  let items=[], page=1, pages=1;
+  while (page<=pages) {
+    const res = await fetch(`${url}&page=${page}&per_page=100`, {
+      headers:{
+        'X-Discogs-Token': token,
+        'Content-Type': 'application/json'
+      }
+    });
+    if (!res.ok) throw new Error('Discogs fout HTTP '+res.status);
+    const data = await res.json();
+    items = items.concat(data[key]||[]);
+    pages = data.pagination?.pages||1; page++;
+  }
+  return items;
+}
+
+async function connectDiscogs() {
+  const token = document.getElementById('inp-discogs-token').value.trim();
+  if (!token) { setStatus('discogs','Vul je Discogs token in.','err'); return; }
+  save('vinyl-discogs-token', token);
+  setStatus('discogs','Inventaris ophalen...','loading');
+  try {
+    const listings = await fetchAllPages(`https://major9-api.kjc-sariwating.workers.dev/discogs/users/${encodeURIComponent(USERNAME)}/inventory?status=For+Sale`, token, 'listings');
+    const forSale = listings.map(l => ({artist:l.release?.artist||'—',title:l.release?.title||'—',year:l.release?.year||'—',genre:l.release?.genres?.[0]||'Overig',price:parseFloat(l.price?.value)||0,condition:l.condition||'—',status:'Te koop',ink:0,source:'inventaris'}));
+    setStatus('discogs',`${forSale.length} te koop — collectie ophalen...`,'loading');
+    let releases = [];
+    try {
+      // Collectie ophalen — max 5 paginas (500 items) om rate limit te vermijden
+      const colBase = `https://major9-api.kjc-sariwating.workers.dev/discogs/users/${encodeURIComponent(USERNAME)}/collection/folders/0/releases`;
+      let page = 1, pages = 1;
+      while (page <= pages && page <= 5) {
+        const res = await fetch(`${colBase}&page=${page}&per_page=100&sort=added&sort_order=desc`, {
+          headers: { 'X-Discogs-Token': token }
+        });
+        if (!res.ok) break;
+        const data = await res.json();
+        releases = releases.concat(data.releases || []);
+        pages = data.pagination?.pages || 1;
+        page++;
+      }
+    } catch(e) { console.log('Collectie niet beschikbaar:', e.message); }
+    const fst = new Set(forSale.map(i=>i.artist+i.title));
+    const coll = releases.filter(r=>!fst.has((r.basic_information?.artists?.[0]?.name||'')+(r.basic_information?.title||''))).map(r=>({artist:r.basic_information?.artists?.[0]?.name||'—',title:r.basic_information?.title||'—',year:r.basic_information?.year||'—',genre:r.basic_information?.genres?.[0]||'Overig',price:parseFloat(r.basic_information?.lowest_price||0),value:parseFloat(r.basic_information?.lowest_price||0),condition:'—',status:'Collectie',ink:0,source:'collectie',cover:r.basic_information?.cover_image||r.basic_information?.thumb||'',thumb:r.basic_information?.thumb||''}));
+    inventory = [...forSale,...coll];
+
+    setStatus('discogs','Orders ophalen...','loading');
+    let orders = [];
+    try { orders = await fetchAllPages(`https://api.discogs.com/marketplace/orders?token=${encodeURIComponent(token)}&status=Shipped&sort=created&sort_order=desc`, token, 'orders'); } catch(e) {}
+    if (orders.length > 0) {
+      const existing = new Set(transactions.filter(t=>t.bron==='discogs').map(t=>t.id));
+      const newOrders = orders.filter(o=>!existing.has(o.id)).map(o => ({album:(o.items?.[0]?.release?.artist||'—')+' – '+(o.items?.[0]?.release?.title||'—'),type:'verkoop',prijs:parseFloat(o.total?.value)||0,ink:0,datum:(o.created||'').slice(0,10),bron:'discogs',id:o.id}));
+      transactions = [...newOrders,...transactions.filter(t=>t.bron!=='discogs')].sort((a,b)=>(b.datum||'').localeCompare(a.datum||''));
+      save('vinyl-transactions', transactions);
+    }
+    // Sla inventory op zodat volgende refresh geen API-aanroep nodig is
+    save('vinyl-inventory', inventory);
+    document.getElementById('discogs-badge').className='badge-connected';
+    document.getElementById('discogs-badge').innerHTML='<div class="badge-dot"></div> Verbonden';
+    setStatus('discogs',`${forSale.length} te koop · ${coll.length} collectie · ${orders.length} orders ✓`,'ok');
+    document.getElementById('last-sync').textContent='Sync: '+new Date().toLocaleTimeString('nl-NL');
+    populateGenreFilter();
+    if (bertusConnected) checkBertusStock();
+    render();
+  } catch(e) { setStatus('discogs',e.message,'err'); }
+}
+
+// ---- e-Boekhouden ----
+async function connectEboekhouden() {
+  const user = document.getElementById('inp-eb-user').value.trim();
+  const token = document.getElementById('inp-eb-token').value.trim();
+  const token2 = document.getElementById('inp-eb-token2').value.trim();
+  if (user) save('vinyl-eb-user', user);
+  if (token) save('vinyl-eb-token', token);
+  if (token2) save('vinyl-eb-token2', token2);
+  if (!user||!token) { setStatus('eb','Vul gebruikersnaam en token in.','err'); return; }
+  setStatus('eb','Verbinden met e-Boekhouden...','loading');
+  try {
+    // e-Boekhouden uses a SOAP/REST API — we fetch mutaties (transactions)
+    const url = `https://soap.e-boekhouden.nl/boekhouden/webservice.asmx`;
+    // Attempt REST endpoint if available
+    const token2 = document.getElementById('inp-eb-token2').value.trim();
+    const res = await fetch(`https://major9-api.kjc-sariwating.workers.dev/eboekhouden/mutaties`, {
+      headers:{'X-EB-User': user, 'X-EB-Token': token, 'X-EB-Token2': token2, 'Content-Type': 'application/json'}
+    });
+    if (!res.ok) throw new Error('e-Boekhouden fout HTTP '+res.status+'. Controleer je inloggegevens.');
+    const data = await res.json();
+    const grootboekMap = { '7991': 'Inkoop', '7992': 'Verpakkingskosten', '8040': 'Omzet vinyl' };
+    const mutatiesRaw = Array.isArray(data.mutaties) ? data.mutaties :
+                        Array.isArray(data.Mutaties) ? data.Mutaties :
+                        Array.isArray(data) ? data : [];
+    const mutaties = mutatiesRaw.map(m => {
+      const gb = String(m.grootboek||m.GrootboekCode||m.grootboekCode||'');
+      const categorie = grootboekMap[gb] || m.categorie||m.Categorie||'Overig';
+      return {
+        omschrijving: m.omschrijving||m.Omschrijving||m.description||'—',
+        bedrag: Math.abs(parseFloat(m.bedrag||m.Bedrag||m.amount)||0),
+        datum: (m.datum||m.Datum||m.date||'').slice(0,10),
+        categorie,
+        grootboek: gb,
+        isOmzet: gb === '8040',
+        bron: 'e-boekhouden',
+      };
+    });
+    const existing = new Set(kosten.filter(k=>k.bron==='e-boekhouden').map(k=>k.omschrijving+k.datum));
+    const nieuw = mutaties.filter(m=>!existing.has(m.omschrijving+m.datum));
+    kosten = [...nieuw,...kosten.filter(k=>k.bron!=='e-boekhouden')].sort((a,b)=>(b.datum||'').localeCompare(a.datum||''));
+    save('vinyl-kosten', kosten);
+    document.getElementById('eboekhouden-badge').className='badge-connected';
+    document.getElementById('eboekhouden-badge').innerHTML='<div class="badge-dot"></div> Verbonden';
+    setStatus('eb',`${mutaties.length} kostenposten geladen ✓`,'ok');
+    renderKosten(); renderMetrics();
+  } catch(e) {
+    setStatus('eb','Fout: '+e.message+' — voeg kosten handmatig toe op het Kosten-tabblad.','err');
+  }
+}
+
+// ---- Bertus ----
+async function connectBertus() {
+  const token = document.getElementById('inp-bertus-token').value.trim();
+  if (token) save('vinyl-bertus-token', token);
+  if (!token) { setStatus('bertus','Vul je Bertus token in.','err'); return; }
+  setStatus('bertus','Verbinden met Bertus...','loading');
+  try {
+    const res = await fetch('https://major9-api.kjc-sariwating.workers.dev/bertus/stock?format=json', {
+      headers:{'X-Bertus-Token': token, 'Content-Type': 'application/json'}
+    });
+    if (!res.ok) throw new Error('Bertus API HTTP '+res.status);
+    const data = await res.json();
+    const stockItems = data.items||data.products||[];
+    const stockMap = {};
+    stockItems.forEach(p => {
+      const key = (p.ean||p.barcode||p.title||'').toLowerCase();
+      const titleKey = (p.title||'').toLowerCase();
+      const price = parseFloat(p.inkoopprijs||p.price_purchase||p.cost||p.purchase_price||0);
+      if (key) stockMap[key] = price;
+      if (titleKey) stockMap[titleKey] = price;
+    });
+    inventory = inventory.map(item => {
+      const titleKey = item.title.toLowerCase();
+      const fullKey = (item.artist+' '+item.title).toLowerCase();
+      const inStock = fullKey in stockMap || titleKey in stockMap;
+      const bertusPrice = stockMap[fullKey] || stockMap[titleKey] || 0;
+      return {...item, bertus: inStock, bertusPrice};
+    });
+    bertusConnected = true; bertusToken = token;
+    document.getElementById('bertus-badge').className='badge-connected';
+    document.getElementById('bertus-badge').innerHTML='<div class="badge-dot"></div> Verbonden';
+    setStatus('bertus',`${stockSet.size} Bertus-titels geladen ✓`,'ok');
+    renderStockTable();
+  } catch(e) {
+    setStatus('bertus','Fout: '+e.message,'err');
+  }
+}
+
+async function checkBertusStock() {
+  if (!bertusConnected||!bertusToken) return;
+  await connectBertus();
+}
+
+// ---- Helpers ----
+function setStatus(key, msg, type) {
+  const ids = {discogs:'discogs-status', eb:'eb-status', bertus:'bertus-status'};
+  const el = document.getElementById(ids[key]);
+  if (!el) return;
+  el.className = 'status-msg status-'+type;
+  el.textContent = msg;
+}
+
+// ---- Demo ----
+function loadDemo() {
+  inventory = [
+    {artist:'Pink Floyd',title:'The Wall',year:1979,genre:'Rock',price:45,condition:'VG+',status:'Te koop',ink:18},
+    {artist:'Miles Davis',title:'Kind of Blue',year:1959,genre:'Jazz',price:32,condition:'VG',status:'Te koop',ink:14},
+    {artist:'The Beatles',title:'Abbey Road',year:1969,genre:'Rock',price:55,condition:'NM',status:'Gereserveerd',ink:22},
+    {artist:'Nina Simone',title:'Little Girl Blue',year:1958,genre:'Jazz',price:38,condition:'VG+',status:'Te koop',ink:12},
+    {artist:'David Bowie',title:'Ziggy Stardust',year:1972,genre:'Rock',price:48,condition:'VG',status:'Te koop',ink:20},
+    {artist:'Stevie Wonder',title:'Songs in the Key of Life',year:1976,genre:'Soul',price:48,condition:'VG+',status:'Te koop',ink:19},
+    {artist:'Radiohead',title:'OK Computer',year:1997,genre:'Rock',price:42,condition:'NM',status:'Te koop',ink:18},
+    {artist:'Fleetwood Mac',title:'Rumours',year:1977,genre:'Rock',price:35,condition:'VG',status:'Collectie',ink:15},
+    {artist:'Bob Dylan',title:'Blonde on Blonde',year:1966,genre:'Rock',price:68,condition:'VG+',status:'Te koop',ink:25},
+    {artist:'John Coltrane',title:'A Love Supreme',year:1965,genre:'Jazz',price:75,condition:'VG',status:'Te koop',ink:28},
+  ];
+  transactions = [
+    {album:'Pink Floyd – The Wall',type:'verkoop',prijs:45,ink:18,genre:'Rock',datum:'2026-06-05',bron:'discogs'},
+    {album:'Miles Davis – Kind of Blue',type:'verkoop',prijs:32,ink:14,genre:'Jazz',datum:'2026-06-04',bron:'discogs'},
+    {album:'Lot 8 platen',type:'inkoop',prijs:95,ink:95,genre:'Divers',datum:'2026-06-03',bron:'handmatig'},
+    {album:'Nina Simone – Little Girl Blue',type:'verkoop',prijs:38,ink:12,genre:'Jazz',datum:'2026-06-02',bron:'discogs'},
+    {album:'Pink Floyd – Animals',type:'verkoop',prijs:52,ink:20,genre:'Rock',datum:'2026-05-28',bron:'discogs'},
+    {album:'Pink Floyd – Wish You Were Here',type:'verkoop',prijs:48,ink:18,genre:'Rock',datum:'2026-04-15',bron:'discogs'},
+  ];
+  vintedTrans = [
+    {album:'The Cure – Disintegration',type:'verkoop',prijs:28,ink:10,genre:'Rock',datum:'2026-06-03',bron:'vinted'},
+    {album:'Talking Heads – Remain in Light',type:'verkoop',prijs:35,ink:12,genre:'Rock',datum:'2026-05-20',bron:'vinted'},
+    {album:'Joni Mitchell – Blue',type:'verkoop',prijs:42,ink:15,genre:'Pop',datum:'2026-04-10',bron:'vinted'},
+  ];
+  bulkMaanden = [
+    {jaar:2026,maand:1,omzet:320,ink:140,aantal:11,notitie:'Goede start'},
+    {jaar:2026,maand:2,omzet:285,ink:120,aantal:9,notitie:''},
+    {jaar:2026,maand:3,omzet:410,ink:165,aantal:14,notitie:'Markt Breda'},
+  ];
+  kosten = [
+    {omschrijving:'Verzendkosten januari',bedrag:24.50,datum:'2026-01-31',categorie:'Verzending',bron:'handmatig'},
+    {omschrijving:'Hoes plastic hoesjes (100x)',bedrag:18.00,datum:'2026-02-10',categorie:'Materialen',bron:'handmatig'},
+    {omschrijving:'Marktplaats advertenties',bedrag:12.00,datum:'2026-03-01',categorie:'Marketing',bron:'handmatig'},
+    {omschrijving:'Discogs verkoopcommissie',bedrag:38.50,datum:'2026-04-30',categorie:'Commissie',bron:'handmatig'},
+  ];
+  document.getElementById('discogs-badge').innerHTML='<div style="width:6px;height:6px;border-radius:50%;background:var(--amber);"></div> Demo data';
+  setStatus('discogs','Demo geladen — verbind Discogs voor echte data.','loading');
+  populateGenreFilter();
+  render();
+}
+
+// ---- Init ----
+function render() {
+  renderMetrics(); renderCharts(); renderDashTrans();
+  renderStockTable(); renderTransTable(); renderVintedTrans(); renderBulkTable();
+}
+
+function initDates() {
+  const d = today();
+  ['vt-datum','inp-datum','kost-datum'].forEach(id => { const el=document.getElementById(id); if(el) el.value=d; });
+}
+
+function initFromStorage() {
+  // Herstel token in veld — verbindt NIET automatisch
+  const savedToken = load('vinyl-discogs-token', null);
+  if (savedToken) document.getElementById('inp-discogs-token').value = savedToken;
+
+  // Herstel e-Boekhouden tokens
+  const savedEbUser = load('vinyl-eb-user', null);
+  const savedEbToken = load('vinyl-eb-token', null);
+  const savedEbToken2 = load('vinyl-eb-token2', null);
+  if (savedEbUser) document.getElementById('inp-eb-user').value = savedEbUser;
+  if (savedEbToken) document.getElementById('inp-eb-token').value = savedEbToken;
+  if (savedEbToken2) document.getElementById('inp-eb-token2').value = savedEbToken2;
+
+  // Herstel Bertus velden
+  const savedBertusUser = load('vinyl-bertus-user', null);
+  const savedBertusSubkey = load('vinyl-bertus-subkey', null);
+  const savedBertusAccount = load('vinyl-bertus-account', null);
+  const savedBertusClient = load('vinyl-bertus-client', null);
+  if (savedBertusUser) document.getElementById('inp-bertus-user').value = savedBertusUser;
+  if (savedBertusSubkey) document.getElementById('inp-bertus-subkey').value = savedBertusSubkey;
+  if (savedBertusAccount) document.getElementById('inp-bertus-account').value = savedBertusAccount;
+  if (savedBertusClient) document.getElementById('inp-bertus-client').value = savedBertusClient;
+  // Herstel opgeslagen data zonder nieuwe API-aanroep
+  const savedTrans = load('vinyl-transactions', null);
+  const savedVinted = load('vinyl-vinted', null);
+  const savedBulk = load('vinyl-bulk', null);
+  const savedKosten = load('vinyl-kosten', null);
+  const savedInventory = load('vinyl-inventory', null);
+  if (savedInventory && savedInventory.length > 0) {
+    if (savedTrans) transactions = savedTrans;
+    if (savedVinted) vintedTrans = savedVinted;
+    if (savedBulk) bulkMaanden = savedBulk;
+    if (savedKosten) kosten = savedKosten;
+    inventory = savedInventory;
+    populateGenreFilter();
+    document.getElementById('discogs-badge').className = 'badge-connected';
+    document.getElementById('discogs-badge').innerHTML = '<div class="badge-dot"></div> Opgeslagen data';
+    setStatus('discogs', `${inventory.filter(i=>i.status==='Te koop').length} te koop · ${inventory.filter(i=>i.status==='Collectie').length} collectie — klik Verbinden om te verversen`, 'ok');
+    render();
+  } else if (savedTrans||savedVinted||savedBulk) {
+    if (savedTrans) transactions = savedTrans;
+    if (savedVinted) vintedTrans = savedVinted;
+    if (savedBulk) bulkMaanden = savedBulk;
+    if (savedKosten) kosten = savedKosten;
+    setStatus('discogs', 'Token klaar — klik Verbinden om voorraad te laden.', 'loading');
+    render();
+  } else {
+    loadDemo();
+  }
+
+  // Auto-verbind e-Boekhouden als tokens opgeslagen zijn en nog geen kosten geladen
+  if (savedEbUser && savedEbToken && kosten.length === 0) {
+    setTimeout(() => connectEboekhouden(), 800);
+  }
+}
+
+let suggestTimer = null;
+
+function filterAlbumSuggest() {
+  const q = document.getElementById('inp-album').value;
+  const suggest = document.getElementById('album-suggest');
+  if (!q || q.length < 2) { suggest.style.display = 'none'; return; }
+
+  const localQ = q.toLowerCase();
+  const teKoop = inventory.filter(i => i.status === 'Te koop' && (i.artist+' '+i.title).toLowerCase().includes(localQ)).slice(0, 5);
+  const collectie = inventory.filter(i => i.status !== 'Te koop' && (i.artist+' '+i.title).toLowerCase().includes(localQ)).slice(0, 5);
+
+  suggest.innerHTML = '';
+
+  const addHeader = (text) => {
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'padding:4px 12px;font-size:10px;color:var(--muted);background:var(--bg3);letter-spacing:0.5px;text-transform:uppercase;font-weight:500;';
+    hdr.textContent = text;
+    suggest.appendChild(hdr);
+  };
+
+  const addRow = (artist, title, year, genre, cover, price, ink, onclick) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'padding:8px 12px;cursor:pointer;border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:10px;';
+    const imgHtml = cover ? '<img src="'+cover+'" style="width:40px;height:40px;object-fit:cover;border-radius:4px;flex-shrink:0;">' : '<div style="width:40px;height:40px;border-radius:4px;background:var(--bg4);flex-shrink:0;display:flex;align-items:center;justify-content:center;">&#127925;</div>';
+    row.innerHTML = imgHtml + '<div style="flex:1;overflow:hidden;"><div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+artist+' – '+title+'</div><div style="font-size:11px;color:var(--muted);">'+year+' · '+genre+'</div></div>'+(price>0?'<div style="font-size:12px;color:var(--green);font-weight:500;flex-shrink:0;">€'+price+'</div>':'');
+    row.onmouseover = function(){ this.style.background='var(--bg3)'; };
+    row.onmouseout = function(){ this.style.background=''; };
+    row.onclick = onclick;
+    suggest.appendChild(row);
+  };
+
+  if (teKoop.length) {
+    addHeader('Jouw voorraad');
+    teKoop.forEach(i => addRow(i.artist, i.title, i.year||'—', i.genre||'', i.cover||i.thumb||'', i.price||0, i.ink||0, () => selectAlbum(i.artist+' - '+i.title, i.price||0, i.ink||0, i.cover||i.thumb||'')));
+  }
+  if (collectie.length) {
+    addHeader('Jouw collectie');
+    collectie.forEach(i => addRow(i.artist, i.title, i.year||'—', i.genre||'', i.cover||i.thumb||'', 0, i.ink||0, () => selectAlbum(i.artist+' - '+i.title, 0, i.ink||0, i.cover||i.thumb||'')));
+  }
+
+  if (teKoop.length || collectie.length) suggest.style.display = 'block';
+  else suggest.style.display = 'none';
+
+  // Direct zoeken in Discogs publieke database — geen token nodig
+  clearTimeout(suggestTimer);
+  suggestTimer = setTimeout(async () => {
+    if (q.length < 2) return;
+    try {
+      const discogsToken = document.getElementById('inp-discogs-token').value.trim();
+      const headers = discogsToken ? { 'X-Discogs-Token': discogsToken } : {};
+      const res = await fetch('https://major9-api.kjc-sariwating.workers.dev/discogs/publicsearch?q='+encodeURIComponent(q), { headers });
+      const data = await res.json();
+      if (!data.results || !data.results.length) return;
+      const localTitles = new Set(inventory.map(i => (i.artist+' '+i.title).toLowerCase()));
+      const discogsResults = data.results.filter(r => {
+        const full = (r.artist+' '+r.album).toLowerCase();
+        return !localTitles.has(full);
+      }).slice(0, 8);
+      if (!discogsResults.length) return;
+      addHeader('Discogs');
+      discogsResults.forEach(r => {
+        const cover = r.cover || r.thumb || '';
+        addRow(
+          r.artist, r.album, r.year||'—',
+          (r.genre||'') + (r.label ? ' · '+r.label : ''),
+          cover, 0, 0,
+          () => selectAlbum(r.artist+' - '+r.album, 0, 0, cover)
+        );
+      });
+      suggest.style.display = 'block';
+    } catch(e) {}
+  }, 200);
+}
+
+function selectAlbum(name, price, ink, coverUrl) {
+  document.getElementById('inp-album').value = name;
+  document.getElementById('album-suggest').style.display = 'none';
+  if (price > 0) document.getElementById('inp-prijs').value = price;
+  if (ink > 0) document.getElementById('inp-ink').value = ink;
+  calcMarge();
+  const preview = document.getElementById('cover-preview');
+  if (preview) {
+    if (coverUrl) {
+      preview.innerHTML = '';
+      const img = document.createElement('img');
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+      img.src = coverUrl;
+      img.onerror = () => {
+        preview.innerHTML = '<div style="font-size:40px;margin-bottom:8px;">&#127925;</div><div style="font-size:11px;color:var(--muted);text-align:center;padding:0 16px;">Cover niet beschikbaar</div>';
+      };
+      preview.appendChild(img);
+    } else {
+      // Geen cover opgeslagen — probeer via Discogs search
+      if (name.length > 3) {
+        preview.innerHTML = '<div style="font-size:11px;color:var(--muted);">Cover laden...</div>';
+        const dt = document.getElementById('inp-discogs-token').value.trim();
+        fetch('https://major9-api.kjc-sariwating.workers.dev/discogs/publicsearch?q='+encodeURIComponent(name), dt ? { headers: { 'X-Discogs-Token': dt } } : {}).then(r => r.json()).then(data => {
+          const cover = data.results?.[0]?.cover_image || data.results?.[0]?.thumb || '';
+          if (cover) {
+            preview.innerHTML = '';
+            const img = document.createElement('img');
+            img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+            img.src = cover;
+            img.onerror = () => { preview.innerHTML = '<div style="font-size:40px;">&#127925;</div>'; };
+            preview.appendChild(img);
+          } else {
+            preview.innerHTML = '<div style="font-size:40px;margin-bottom:8px;">&#127925;</div><div style="font-size:11px;color:var(--muted);">Geen cover gevonden</div>';
+          }
+        }).catch(() => {
+          preview.innerHTML = '<div style="font-size:40px;">&#127925;</div>';
+        });
+      } else {
+        preview.innerHTML = '<div style="font-size:40px;margin-bottom:8px;">&#127925;</div><div style="font-size:11px;color:var(--muted);text-align:center;padding:0 16px;">Zoek een album<br>voor cover art</div>';
+      }
+    }
+  }
+}
+
+initDates();
+initFromStorage();
+</script>
+</body>
+</html>
