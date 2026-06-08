@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Bertus API test</title></head>
+<body style="font-family:sans-serif;padding:2rem;max-width:700px;">
+<h2>Bertus API test</h2>
+<div style="display:grid;gap:8px;margin-bottom:1rem;">
+  <input id="user" placeholder="my.bertus.com e-mail" style="padding:8px;border:1px solid #ccc;border-radius:6px;">
+  <input id="pass" type="password" placeholder="my.bertus.com wachtwoord" style="padding:8px;border:1px solid #ccc;border-radius:6px;">
+  <input id="subkey" type="password" placeholder="Subscription key (Primary key)" style="padding:8px;border:1px solid #ccc;border-radius:6px;">
+  <input id="account" placeholder="Accountnummer" style="padding:8px;border:1px solid #ccc;border-radius:6px;">
+  <input id="client" placeholder="Client ID (leeg laten als onbekend)" style="padding:8px;border:1px solid #ccc;border-radius:6px;">
+  <button onclick="testAuth()" style="padding:10px;background:#0071e3;color:#fff;border:none;border-radius:20px;cursor:pointer;">Stap 1: Inloggen</button>
+  <button onclick="testSearch()" style="padding:10px;background:#34c759;color:#fff;border:none;border-radius:20px;cursor:pointer;" id="btn-search" disabled>Stap 2: Zoeken op "Beatles"</button>
+</div>
+<pre id="output" style="background:#f5f5f7;padding:1rem;border-radius:8px;font-size:11px;white-space:pre-wrap;word-break:break-all;max-height:400px;overflow:auto;"></pre>
+<script>
+let bearer = '';
+
+async function testAuth() {
+  const user = document.getElementById('user').value.trim();
+  const pass = document.getElementById('pass').value.trim();
+  const client = document.getElementById('client').value.trim();
+  const out = document.getElementById('output');
+  out.textContent = 'Inloggen...';
+  try {
+    const res = await fetch('https://major9-api.kjc-sariwating.workers.dev/bertus/auth', {
+      headers: { 'X-Bertus-User': user, 'X-Bertus-Pass': pass, 'X-Bertus-Client': client }
+    });
+    const data = await res.json();
+    out.textContent = JSON.stringify(data, null, 2);
+    if (data.access_token) {
+      bearer = data.access_token;
+      document.getElementById('btn-search').disabled = false;
+      out.textContent = 'Inloggen gelukt!\nToken: ' + bearer.slice(0,50) + '...\n\nKlik nu op Stap 2.';
+    }
+  } catch(e) { out.textContent = 'Fout: ' + e.message; }
+}
+
+async function testSearch() {
+  const subkey = document.getElementById('subkey').value.trim();
+  const account = document.getElementById('account').value.trim();
+  const out = document.getElementById('output');
+  out.textContent = 'Zoeken...';
+  try {
+    const res = await fetch('https://major9-api.kjc-sariwating.workers.dev/bertus/search?q=Beatles', {
+      headers: { 'X-Bertus-Bearer': bearer, 'X-Bertus-SubKey': subkey, 'X-Bertus-Account': account }
+    });
+    const data = await res.json();
+    out.textContent = JSON.stringify(data, null, 2).slice(0, 3000);
+  } catch(e) { out.textContent = 'Fout: ' + e.message; }
+}
+</script>
+</body>
+</html>
