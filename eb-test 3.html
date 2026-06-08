@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>e-Boekhouden bedrag test</title></head>
+<body style="font-family:sans-serif;padding:2rem;max-width:900px;">
+<h2>e-Boekhouden bedrag check</h2>
+<div style="display:grid;gap:8px;margin-bottom:1rem;">
+  <input id="user" placeholder="Gebruikersnaam" style="padding:8px;border:1px solid #ccc;border-radius:6px;">
+  <input id="code1" type="password" placeholder="Beveiligingscode 1" style="padding:8px;border:1px solid #ccc;border-radius:6px;">
+  <input id="code2" type="password" placeholder="Beveiligingscode 2" style="padding:8px;border:1px solid #ccc;border-radius:6px;">
+  <button onclick="test()" style="padding:10px;background:#0071e3;color:#fff;border:none;border-radius:20px;cursor:pointer;">Analyseren</button>
+</div>
+<div id="output" style="background:#f5f5f7;padding:1rem;border-radius:8px;font-size:13px;line-height:1.8;"></div>
+<script>
+async function test() {
+  const user = document.getElementById('user').value.trim();
+  const code1 = document.getElementById('code1').value.trim();
+  const code2 = document.getElementById('code2').value.trim();
+  const out = document.getElementById('output');
+  out.innerHTML = 'Bezig...';
+  try {
+    const res = await fetch('https://major9-api.kjc-sariwating.workers.dev/eboekhouden/rawxml', {
+      headers: { 'X-EB-User': user, 'X-EB-Token': code1, 'X-EB-Token2': code2 }
+    });
+    const data = await res.json();
+    const xml = data.xml || '';
+
+    // Parse alle cMutatieList blokken
+    const mutaties = [...xml.matchAll(/<cMutatieList>([\s\S]*?)<\/cMutatieList>/g)];
+    let totaalInvoer = 0, totaalInclBTW = 0, aantalMetTegenrek = 0, aantalZonderTegenrek = 0;
+    const tegenrekeningen = {};
+
+    for (const m of mutaties) {
+      const block = m[1];
+      const regels = [...block.matchAll(/<cMutatieListRegel>([\s\S]*?)<\/cMutatieListRegel>/g)];
+      for (const r of regels) {
+        const rb = r[1];
+        const get = (tag) => { const x = rb.match(new RegExp('<' + tag + '>([^<]*)</' + tag + '>')); return x ? x[1].trim() : ''; };
+        const invoer = parseFloat(get('BedragInvoer') || '0');
+        const inclBTW = parseFloat(get('BedragInclBTW') || '0');
+        const tegenrek = get('TegenrekeningCode');
+        totaalInvoer += Math.abs(invoer);
+        totaalInclBTW += Math.abs(inclBTW);
+        if (tegenrek === '7991') aantalMetTegenrek++;
+        else aantalZonderTegenrek++;
+        tegenrekeningen[tegenrek] = (tegenrekeningen[tegenrek] || 0) + Math.abs(invoer);
+      }
+    }
+
+    out.innerHTML = `
+      <b>Totaal mutaties:</b> ${mutaties.length}<br>
+      <b>Totaal BedragInvoer (alle regels):</b> €${totaalInvoer.toFixed(2)}<br>
+      <b>Totaal BedragInclBTW (alle regels):</b> €${totaalInclBTW.toFixed(2)}<br>
+      <b>Regels met TegenrekeningCode=7991:</b> ${aantalMetTegenrek}<br>
+      <b>Regels met andere tegenrekening:</b> ${aantalZonderTegenrek}<br><br>
+      <b>Bedrag per tegenrekening:</b><br>
+      ${Object.entries(tegenrekeningen).sort((a,b)=>b[1]-a[1]).map(([k,v]) => `${k||'(leeg)'}: €${v.toFixed(2)}`).join('<br>')}
+    `;
+  } catch(e) {
+    out.innerHTML = 'Fout: ' + e.message;
+  }
+}
+</script>
+</body>
+</html>
