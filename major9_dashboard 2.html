@@ -1,0 +1,2524 @@
+<!DOCTYPE html>
+<html lang="nl" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Major9 — Vinyl Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<style>
+/* ══════════════════════════════════════
+   DESIGN TOKENS — Light & Dark
+══════════════════════════════════════ */
+:root {
+  --gold: #B8860B;
+  --gold-light: #D4A017;
+  --gold-subtle: rgba(184,134,11,0.12);
+  --green: #34C759;
+  --red: #FF3B30;
+  --blue: #007AFF;
+  --orange: #FF9500;
+  --purple: #AF52DE;
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --blur: blur(20px);
+  --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+
+[data-theme="dark"] {
+  --bg: #000000;
+  --bg2: #0A0A0A;
+  --surface: rgba(28,28,30,0.8);
+  --surface-solid: #1C1C1E;
+  --surface2: rgba(44,44,46,0.6);
+  --surface2-solid: #2C2C2E;
+  --surface3: #3A3A3C;
+  --border: rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.15);
+  --text: #FFFFFF;
+  --text2: rgba(255,255,255,0.6);
+  --text3: rgba(255,255,255,0.35);
+  --sidebar-bg: rgba(18,18,18,0.92);
+  --topbar-bg: rgba(0,0,0,0.72);
+  --card-bg: rgba(28,28,30,0.7);
+  --input-bg: rgba(44,44,46,0.8);
+  --hover: rgba(255,255,255,0.06);
+  --active: rgba(255,255,255,0.1);
+  --shadow: 0 8px 32px rgba(0,0,0,0.6);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+[data-theme="light"] {
+  --bg: #F2F2F7;
+  --bg2: #FFFFFF;
+  --surface: rgba(255,255,255,0.72);
+  --surface-solid: #FFFFFF;
+  --surface2: rgba(242,242,247,0.8);
+  --surface2-solid: #F2F2F7;
+  --surface3: #E5E5EA;
+  --border: rgba(0,0,0,0.08);
+  --border-strong: rgba(0,0,0,0.15);
+  --text: #000000;
+  --text2: rgba(0,0,0,0.55);
+  --text3: rgba(0,0,0,0.3);
+  --sidebar-bg: rgba(242,242,247,0.92);
+  --topbar-bg: rgba(242,242,247,0.72);
+  --card-bg: rgba(255,255,255,0.8);
+  --input-bg: rgba(242,242,247,0.9);
+  --hover: rgba(0,0,0,0.04);
+  --active: rgba(0,0,0,0.08);
+  --shadow: 0 8px 32px rgba(0,0,0,0.12);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* ══════════════════════════════════════
+   RESET & BASE
+══════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 15px; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  transition: background var(--transition), color var(--transition);
+  overflow-x: hidden;
+}
+
+/* ══════════════════════════════════════
+   LOGIN SCREEN
+══════════════════════════════════════ */
+#loginScreen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.login-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 48px 40px;
+  width: 100%;
+  max-width: 400px;
+  backdrop-filter: var(--blur);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.login-logo {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  margin: 0 auto 24px;
+  box-shadow: 0 4px 16px rgba(184,134,11,0.4);
+}
+
+.login-title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+}
+
+.login-sub {
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 36px;
+}
+
+.google-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 20px;
+  background: var(--surface2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+  font-family: var(--font);
+}
+
+.google-btn:hover {
+  background: var(--hover);
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.google-btn svg { flex-shrink: 0; }
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+  color: var(--text3);
+  font-size: 12px;
+}
+
+.login-divider::before, .login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.demo-btn {
+  width: 100%;
+  padding: 13px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  border: none;
+  border-radius: var(--radius-md);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  font-family: var(--font);
+}
+
+.demo-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+.login-footer {
+  margin-top: 24px;
+  font-size: 12px;
+  color: var(--text3);
+}
+
+/* ══════════════════════════════════════
+   APP SHELL
+══════════════════════════════════════ */
+#app { display: none; min-height: 100vh; }
+#app.visible { display: flex; }
+
+/* ══════════════════════════════════════
+   SIDEBAR
+══════════════════════════════════════ */
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--sidebar-bg);
+  backdrop-filter: var(--blur);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+  transition: all var(--transition);
+}
+
+.sidebar-header {
+  padding: 20px 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sidebar-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.sidebar-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-user-sub {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 1px;
+}
+
+.nav-groups { padding: 16px 10px; flex: 1; overflow-y: auto; }
+
+.nav-group { margin-bottom: 24px; }
+
+.nav-group-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 0 10px 6px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--text2);
+  font-size: 14px;
+  font-weight: 500;
+  transition: all var(--transition);
+  position: relative;
+}
+
+.nav-item:hover { background: var(--hover); color: var(--text); }
+
+.nav-item.active {
+  background: var(--gold-subtle);
+  color: var(--gold-light);
+}
+
+.nav-icon {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.nav-item.active .nav-icon { background: rgba(184,134,11,0.2); }
+
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.discogs-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--text3);
+  transition: background var(--transition);
+}
+.status-dot.on { background: var(--green); box-shadow: 0 0 6px rgba(52,199,89,0.5); }
+
+.theme-toggle {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all var(--transition);
+}
+.theme-toggle:hover { background: var(--hover); }
+
+/* ══════════════════════════════════════
+   MAIN
+══════════════════════════════════════ */
+.main {
+  flex: 1;
+  margin-left: 240px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ══════════════════════════════════════
+   TOPBAR
+══════════════════════════════════════ */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  background: var(--topbar-bg);
+  backdrop-filter: var(--blur);
+  border-bottom: 1px solid var(--border);
+  padding: 0 28px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.period-pill {
+  display: flex;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.period-btn {
+  padding: 5px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text2);
+  background: transparent;
+  border: none;
+  transition: all var(--transition);
+  font-family: var(--font);
+}
+
+.period-btn.active {
+  background: var(--surface-solid);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ══════════════════════════════════════
+   BUTTONS
+══════════════════════════════════════ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all var(--transition);
+  font-family: var(--font);
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--gold);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--gold-light); transform: translateY(-1px); }
+
+.btn-secondary {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { background: var(--hover); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover { background: var(--hover); color: var(--text); }
+
+.btn-danger {
+  background: rgba(255,59,48,0.1);
+  color: var(--red);
+  border: 1px solid rgba(255,59,48,0.2);
+}
+.btn-danger:hover { background: rgba(255,59,48,0.2); }
+
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+.btn-icon { padding: 8px; border-radius: 50%; }
+
+/* ══════════════════════════════════════
+   CONTENT
+══════════════════════════════════════ */
+.content { padding: 28px; flex: 1; }
+
+.page { display: none; }
+.page.active { display: block; }
+
+/* ══════════════════════════════════════
+   CARDS
+══════════════════════════════════════ */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: var(--blur);
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+/* ══════════════════════════════════════
+   KPI GRID
+══════════════════════════════════════ */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.kpi-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  backdrop-filter: var(--blur);
+  transition: all var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--kpi-color, var(--gold));
+  opacity: 0.6;
+}
+
+.kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+
+.kpi-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 8px;
+}
+
+.kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: var(--kpi-color, var(--text));
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.kpi-sub {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+/* ══════════════════════════════════════
+   CHARTS
+══════════════════════════════════════ */
+.charts-row {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.charts-row-2 { grid-template-columns: 3fr 2fr; }
+.charts-row-equal { grid-template-columns: 1fr 1fr; }
+
+.chart-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  backdrop-filter: var(--blur);
+}
+
+.chart-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 16px;
+}
+
+/* ══════════════════════════════════════
+   TABLE
+══════════════════════════════════════ */
+.table-wrap { overflow-x: auto; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+thead th {
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition);
+}
+
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--hover); }
+
+tbody td {
+  padding: 11px 16px;
+  color: var(--text);
+  vertical-align: middle;
+}
+
+.td-muted { color: var(--text2); }
+.td-green { color: var(--green); font-weight: 600; }
+.td-red { color: var(--red); font-weight: 600; }
+.td-gold { color: var(--gold-light); font-weight: 600; }
+.td-blue { color: var(--blue); }
+
+/* ══════════════════════════════════════
+   BADGES
+══════════════════════════════════════ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-green { background: rgba(52,199,89,0.12); color: var(--green); }
+.badge-red { background: rgba(255,59,48,0.12); color: var(--red); }
+.badge-gold { background: rgba(184,134,11,0.12); color: var(--gold-light); }
+.badge-blue { background: rgba(0,122,255,0.12); color: var(--blue); }
+.badge-purple { background: rgba(175,82,222,0.12); color: var(--purple); }
+.badge-gray { background: var(--surface2); color: var(--text2); }
+
+/* ══════════════════════════════════════
+   SEARCH
+══════════════════════════════════════ */
+.search-wrap { position: relative; }
+
+.search-input {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 9px 14px 9px 36px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-family: var(--font);
+  transition: all var(--transition);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--gold);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px var(--gold-subtle);
+}
+
+.search-icon {
+  position: absolute;
+  left: 11px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--text3);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════════
+   FORMS
+══════════════════════════════════════ */
+.form-group { margin-bottom: 14px; }
+
+.form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text2);
+  margin-bottom: 6px;
+}
+
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 13px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-family: var(--font);
+  transition: all var(--transition);
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-subtle);
+}
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+/* ══════════════════════════════════════
+   MODAL
+══════════════════════════════════════ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(8px);
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--surface-solid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+  animation: modalIn 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
+.modal-close {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: none;
+  color: var(--text2);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+}
+.modal-close:hover { background: var(--hover); color: var(--text); }
+
+.modal-body { padding: 20px 24px; }
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ══════════════════════════════════════
+   ALBUM GRID
+══════════════════════════════════════ */
+.album-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 12px;
+}
+
+.album-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all var(--transition);
+  backdrop-filter: var(--blur);
+}
+
+.album-card:hover {
+  transform: translateY(-3px) scale(1.01);
+  box-shadow: var(--shadow);
+  border-color: var(--border-strong);
+}
+
+.album-cover {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+  background: var(--surface2);
+}
+
+.album-placeholder {
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  color: var(--text3);
+}
+
+.album-info { padding: 10px 12px 12px; }
+
+.album-artist {
+  font-size: 11px;
+  color: var(--text2);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.album-title {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 6px;
+}
+
+.album-price {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold-light);
+}
+
+.album-no-price {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+/* ══════════════════════════════════════
+   AUTOCOMPLETE
+══════════════════════════════════════ */
+.autocomplete-wrap { position: relative; }
+
+.autocomplete-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  background: var(--surface-solid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 999;
+  display: none;
+  box-shadow: var(--shadow);
+}
+
+.autocomplete-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  cursor: pointer;
+  transition: background var(--transition);
+  border-bottom: 1px solid var(--border);
+}
+
+.autocomplete-item:last-child { border-bottom: none; }
+.autocomplete-item:hover { background: var(--hover); }
+
+.autocomplete-thumb {
+  width: 36px; height: 36px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--surface2);
+}
+
+.autocomplete-text { flex: 1; min-width: 0; }
+.autocomplete-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.autocomplete-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
+.autocomplete-price { font-size: 13px; font-weight: 700; color: var(--gold-light); flex-shrink: 0; }
+
+/* Selected album card */
+.selected-album {
+  display: none;
+  background: var(--surface2);
+  border: 1px solid var(--gold);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin-bottom: 14px;
+  gap: 12px;
+  align-items: center;
+}
+
+.selected-album.show { display: flex; }
+
+.selected-thumb {
+  width: 44px; height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--surface3);
+}
+
+.selected-info { flex: 1; min-width: 0; }
+.selected-name { font-size: 13px; font-weight: 600; }
+.selected-label { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.selected-prices { text-align: right; flex-shrink: 0; }
+.selected-advies { font-size: 12px; color: var(--text2); }
+.selected-price { font-size: 14px; font-weight: 700; color: var(--gold-light); }
+
+/* ══════════════════════════════════════
+   TABS
+══════════════════════════════════════ */
+.tabs {
+  display: flex;
+  background: var(--surface2);
+  border-radius: var(--radius-md);
+  padding: 3px;
+  gap: 2px;
+  margin-bottom: 20px;
+  width: fit-content;
+}
+
+.tab {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text2);
+  transition: all var(--transition);
+  border: none;
+  background: transparent;
+  font-family: var(--font);
+}
+
+.tab.active {
+  background: var(--surface-solid);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ══════════════════════════════════════
+   SETTINGS
+══════════════════════════════════════ */
+.settings-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 16px;
+  backdrop-filter: var(--blur);
+}
+
+.settings-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ══════════════════════════════════════
+   EMPTY STATE
+══════════════════════════════════════ */
+.empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text3);
+}
+
+.empty-icon { font-size: 44px; margin-bottom: 12px; filter: grayscale(1) opacity(0.4); }
+.empty-title { font-size: 15px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
+.empty-sub { font-size: 13px; }
+
+/* ══════════════════════════════════════
+   LOADING
+══════════════════════════════════════ */
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px;
+  color: var(--text2);
+  font-size: 13px;
+}
+
+/* ══════════════════════════════════════
+   PAGINATION
+══════════════════════════════════════ */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 20px;
+}
+
+.pag-btn {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all var(--transition);
+  font-family: var(--font);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pag-btn:hover, .pag-btn.active {
+  background: var(--gold-subtle);
+  border-color: var(--gold);
+  color: var(--gold-light);
+}
+
+/* ══════════════════════════════════════
+   IMPORT BOX
+══════════════════════════════════════ */
+.import-box {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: block;
+}
+
+.import-box:hover { border-color: var(--gold); background: var(--gold-subtle); }
+.import-box input { display: none; }
+
+/* ══════════════════════════════════════
+   UTILITIES
+══════════════════════════════════════ */
+.flex { display: flex; }
+.flex-center { display: flex; align-items: center; }
+.gap-8 { gap: 8px; }
+.gap-12 { gap: 12px; }
+.gap-16 { gap: 16px; }
+.mb-12 { margin-bottom: 12px; }
+.mb-16 { margin-bottom: 16px; }
+.mb-20 { margin-bottom: 20px; }
+.ml-auto { margin-left: auto; }
+.text-right { text-align: right; }
+.flex-1 { flex: 1; }
+.min-w-0 { min-width: 0; }
+.truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ══════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════ */
+@media (max-width: 1200px) {
+  .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .main { margin-left: 0; }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .charts-row-2 { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .content { padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     LOGIN SCREEN
+══════════════════════════════════════ -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">♪</div>
+    <div class="login-title">Major9</div>
+    <div class="login-sub">Vinyl Dashboard</div>
+
+    <div class="form-group" style="margin-bottom:12px; text-align:left;">
+      <label class="form-label">Wachtwoord</label>
+      <input type="password" class="form-input" id="loginPassword"
+        placeholder="Voer wachtwoord in"
+        onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div id="loginError" style="font-size:12px; color:var(--red); margin-bottom:12px; display:none;">
+      Ongeldig wachtwoord
+    </div>
+
+    <button class="demo-btn" onclick="doLogin()">Inloggen</button>
+
+    <div class="login-footer" style="margin-top:20px;">
+      major9.nl — Alleen voor bevoegde gebruikers
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     APP
+══════════════════════════════════════ -->
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-avatar" id="sidebarAvatar">M</div>
+      <div>
+        <div class="sidebar-user-name" id="sidebarName">Major9</div>
+        <div class="sidebar-user-sub" id="sidebarEmail">major9.nl</div>
+      </div>
+    </div>
+
+    <div class="nav-groups">
+      <div class="nav-group">
+        <div class="nav-group-label">Overzicht</div>
+        <div class="nav-item active" onclick="nav('dashboard')">
+          <div class="nav-icon">◈</div> Dashboard
+        </div>
+        <div class="nav-item" onclick="nav('collectie')">
+          <div class="nav-icon">◉</div> Collectie
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Financieel</div>
+        <div class="nav-item" onclick="nav('transacties')">
+          <div class="nav-icon">↕</div> Transacties
+        </div>
+        <div class="nav-item" onclick="nav('analyse')">
+          <div class="nav-icon">◎</div> Analyse
+        </div>
+        <div class="nav-item" onclick="nav('inkoop')">
+          <div class="nav-icon">⊕</div> Inkoop
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">Beheer</div>
+        <div class="nav-item" onclick="nav('instellingen')">
+          <div class="nav-icon">◧</div> Instellingen
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="discogs-pill">
+        <div class="status-dot" id="discogsDot"></div>
+        <span id="discogsLabel">Discogs</span>
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Dag/nacht">
+        <span id="themeIcon">☀</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="page-title" id="pageTitle">Dashboard</div>
+      </div>
+      <div class="topbar-right">
+        <div class="period-pill" id="periodPill">
+          <button class="period-btn" onclick="setPeriod('week')">Week</button>
+          <button class="period-btn active" onclick="setPeriod('month')">Maand</button>
+          <button class="period-btn" onclick="setPeriod('quarter')">Kwartaal</button>
+          <button class="period-btn" onclick="setPeriod('year')">Jaar</button>
+          <button class="period-btn" onclick="setPeriod('all')">Alles</button>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('bulkModal')">Bulk</button>
+        <button class="btn btn-primary btn-sm" onclick="openModal('transModal')">+ Transactie</button>
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="signOut()" title="Uitloggen">⎋</button>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- ── DASHBOARD ── -->
+      <div class="page active" id="page-dashboard">
+        <div class="kpi-grid" id="kpiGrid">
+          <div class="kpi-card" style="--kpi-color:var(--green)">
+            <div class="kpi-label">Omzet</div>
+            <div class="kpi-value" id="k-omzet">€0</div>
+            <div class="kpi-sub" id="k-omzet-sub">0 transacties</div>
+          </div>
+          <div class="kpi-card" style="--kpi-color:var(--red)">
+            <div class="kpi-label">Inkoop</div>
+            <div class="kpi-value" id="k-inkoop">€0</div>
+            <div class="kpi-sub">totale kosten</div>
+          </div>
+          <div class="kpi-card" style="--kpi-color:var(--green)">
+            <div class="kpi-label">Winst</div>
+            <div class="kpi-value" id="k-winst">€0</div>
+            <div class="kpi-sub" id="k-winst-sub">na inkoop</div>
+          </div>
+          <div class="kpi-card" style="--kpi-color:var(--gold-light)">
+            <div class="kpi-label">Marge</div>
+            <div class="kpi-value" id="k-marge">0%</div>
+            <div class="kpi-sub">gemiddeld</div>
+          </div>
+          <div class="kpi-card" style="--kpi-color:var(--blue)">
+            <div class="kpi-label">Voorraadwaarde</div>
+            <div class="kpi-value" id="k-voorraad">€0</div>
+            <div class="kpi-sub">verkoopprijs</div>
+          </div>
+        </div>
+
+        <div class="charts-row charts-row-2 mb-16">
+          <div class="chart-card">
+            <div class="chart-label">Omzet & Inkoop</div>
+            <canvas id="cOmzet" height="110"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-label">Marge %</div>
+            <canvas id="cMarge" height="110"></canvas>
+          </div>
+        </div>
+
+        <div class="charts-row charts-row-equal mb-16">
+          <div class="chart-card">
+            <div class="chart-label">Winst per dag</div>
+            <canvas id="cWinst" height="100"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-label">Omzet per kanaal</div>
+            <canvas id="cKanaal" height="100"></canvas>
+          </div>
+        </div>
+
+        <div class="card mb-16">
+          <div class="card-header">
+            <div class="card-title">Recente transacties</div>
+            <button class="btn btn-ghost btn-sm" onclick="nav('transacties')">Alle →</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Datum</th><th>Album</th><th>Omzet</th><th>Inkoop</th><th>Winst</th><th>Kanaal</th>
+              </tr></thead>
+              <tbody id="recentTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── COLLECTIE ── -->
+      <div class="page" id="page-collectie">
+        <div class="flex flex-center gap-12 mb-16">
+          <div class="search-wrap flex-1">
+            <span class="search-icon">⌕</span>
+            <input class="search-input" id="colSearch" placeholder="Zoek op artiest of album…" oninput="renderCollectie()">
+          </div>
+          <select class="form-select" style="width:160px;" id="genreFilter" onchange="renderCollectie()">
+            <option value="">Alle genres</option>
+          </select>
+          <button class="btn btn-primary" onclick="syncDiscogs()">↻ Sync Discogs</button>
+        </div>
+
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:16px;">
+          <div class="kpi-card" style="--kpi-color:var(--text)">
+            <div class="kpi-label">Albums</div>
+            <div class="kpi-value" id="col-total" style="font-size:22px;">0</div>
+          </div>
+          <div class="kpi-card" style="--kpi-color:var(--green)">
+            <div class="kpi-label">Met prijs</div>
+            <div class="kpi-value" id="col-priced" style="font-size:22px; color:var(--green);">0</div>
+          </div>
+          <div class="kpi-card" style="--kpi-color:var(--red)">
+            <div class="kpi-label">Zonder prijs</div>
+            <div class="kpi-value" id="col-unpriced" style="font-size:22px; color:var(--red);">0</div>
+          </div>
+          <div class="kpi-card" style="--kpi-color:var(--gold-light)">
+            <div class="kpi-label">Totale waarde</div>
+            <div class="kpi-value" id="col-value" style="font-size:22px; color:var(--gold-light);">€0</div>
+          </div>
+        </div>
+
+        <div id="colGrid" class="album-grid mb-16">
+          <div class="empty" style="grid-column:1/-1;">
+            <div class="empty-icon">🎵</div>
+            <div class="empty-title">Nog geen collectie</div>
+            <div class="empty-sub">Sync met Discogs via de knop hierboven</div>
+          </div>
+        </div>
+        <div class="pagination" id="colPag"></div>
+      </div>
+
+      <!-- ── TRANSACTIES ── -->
+      <div class="page" id="page-transacties">
+        <div class="flex flex-center gap-12 mb-16">
+          <div class="search-wrap flex-1">
+            <span class="search-icon">⌕</span>
+            <input class="search-input" id="transSearch" placeholder="Zoek transacties…" oninput="renderTrans()">
+          </div>
+          <select class="form-select" style="width:140px;" id="transKanaal" onchange="renderTrans()">
+            <option value="">Alle kanalen</option>
+            <option>Vinted</option><option>major9.nl</option><option>Discogs</option><option>Anders</option>
+          </select>
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer;">
+            📥 CSV
+            <input type="file" accept=".csv" style="display:none;" onchange="importCSV(event)">
+          </label>
+          <button class="btn btn-ghost btn-sm" onclick="exportCSV()">↓ Export</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('transModal')">+ Toevoegen</button>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title" id="transCount">Transacties</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Datum</th><th>Album</th><th>Omzet</th><th>Inkoop</th><th>Winst</th><th>Marge</th><th>Kanaal</th><th></th>
+              </tr></thead>
+              <tbody id="transTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ANALYSE ── -->
+      <div class="page" id="page-analyse">
+        <div class="charts-row charts-row-equal mb-16">
+          <div class="chart-card">
+            <div class="chart-label">Omzet per maand</div>
+            <canvas id="cMaand" height="140"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-label">Winst per kanaal</div>
+            <canvas id="cKanaalWinst" height="140"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">Samenvatting per maand</div></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Maand</th><th>Omzet</th><th>Inkoop</th><th>Winst</th><th>Marge</th><th>Transacties</th><th>Gem./transactie</th>
+              </tr></thead>
+              <tbody id="analyseTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── INKOOP ── -->
+      <div class="page" id="page-inkoop">
+        <div class="flex flex-center gap-12 mb-16">
+          <div class="flex-1"></div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('inkoopModal')">+ Inkoop toevoegen</button>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">Inkoop overzicht</div></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Datum</th><th>Leverancier</th><th>Omschrijving</th><th>Bedrag</th><th>Stuks</th><th>Gem./stuk</th><th></th>
+              </tr></thead>
+              <tbody id="inkoopTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── INSTELLINGEN ── -->
+      <div class="page" id="page-instellingen">
+
+        <div class="settings-card">
+          <div class="settings-title">🎵 Discogs Verbinding</div>
+          <div class="form-row mb-12">
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">API Token</label>
+              <input type="password" class="form-input" id="sToken" placeholder="Jouw Discogs token">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">Gebruikersnaam</label>
+              <input type="text" class="form-input" id="sUsername" placeholder="bijv. Major9.nl">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Folder ID (optioneel, leeglaten = alle albums)</label>
+            <input type="text" class="form-input" id="sFolderId" placeholder="bijv. 9388946" style="max-width:240px;">
+          </div>
+          <div class="flex gap-8 flex-center">
+            <button class="btn btn-primary" onclick="saveDiscogs()">Testen & opslaan</button>
+            <span id="discogsTestMsg" style="font-size:13px;"></span>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-title">📦 Bertus Prijslijst</div>
+          <p style="font-size:13px; color:var(--text2); margin-bottom:16px;">
+            Upload ShipmentExport CSV bestanden van het Bertus portaal. Barcodes worden automatisch gekoppeld aan je collectie.
+          </p>
+          <label class="import-box">
+            <input type="file" accept=".csv" multiple onchange="importBertus(event)">
+            <div style="font-size:32px; margin-bottom:8px;">📦</div>
+            <div style="font-size:14px; font-weight:500; margin-bottom:4px;">ShipmentExport CSV's uploaden</div>
+            <div style="font-size:12px; color:var(--text3);">Meerdere bestanden tegelijk mogelijk</div>
+          </label>
+          <div id="bertusMsg" style="margin-top:12px; font-size:13px; color:var(--text2);"></div>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-title">⚖️ Prijsfactoren</div>
+          <div class="form-row-3 mb-12">
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">Bertus &lt; €19,50</label>
+              <input type="number" class="form-input" id="fLaag" value="1.5" step="0.1">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">Bertus ≥ €19,50</label>
+              <input type="number" class="form-input" id="fHoog" value="1.7" step="0.1">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label">Japan (yen × factor)</label>
+              <input type="number" class="form-input" id="fJapan" value="2.5" step="0.1">
+            </div>
+          </div>
+          <div class="form-group" style="max-width:240px;">
+            <label class="form-label">JPY → EUR wisselkoers</label>
+            <input type="number" class="form-input" id="fJPY" value="160" step="1">
+          </div>
+          <button class="btn btn-primary" onclick="saveFactors()">Opslaan</button>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-title">💾 Data</div>
+          <div class="flex gap-8">
+            <button class="btn btn-ghost" onclick="exportData()">↓ Backup (JSON)</button>
+            <label class="btn btn-ghost" style="cursor:pointer;">
+              ↑ Importeren
+              <input type="file" accept=".json" style="display:none;" onchange="importData(event)">
+            </label>
+            <button class="btn btn-danger" onclick="clearData()">Alles wissen</button>
+          </div>
+        </div>
+
+      </div><!-- /instellingen -->
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ══════════════════════════════════════
+     MODALS
+══════════════════════════════════════ -->
+
+<!-- TRANSACTIE MODAL -->
+<div class="modal-overlay" id="transModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Transactie toevoegen</div>
+      <button class="modal-close" onclick="closeModal('transModal')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Album zoeken -->
+      <div class="form-group autocomplete-wrap">
+        <label class="form-label">Album zoeken in collectie</label>
+        <input type="text" class="form-input" id="tSearch"
+          placeholder="Typ artiest of albumtitel…"
+          oninput="albumSearch()" autocomplete="off">
+        <div class="autocomplete-list" id="tSuggest"></div>
+      </div>
+
+      <!-- Geselecteerd album -->
+      <div class="selected-album" id="tSelected">
+        <img class="selected-thumb" id="tThumb" src="" alt="">
+        <div class="selected-info">
+          <div class="selected-name" id="tSelName"></div>
+          <div class="selected-label" id="tSelLabel"></div>
+        </div>
+        <div class="selected-prices">
+          <div class="selected-advies" id="tSelAdvies"></div>
+          <div class="selected-price" id="tSelPrice"></div>
+        </div>
+        <button onclick="resetAlbum()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:4px;">✕</button>
+      </div>
+
+      <input type="hidden" id="tAlbum">
+
+      <div class="form-row">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Datum</label>
+          <input type="date" class="form-input" id="tDatum">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Kanaal</label>
+          <select class="form-select" id="tKanaal">
+            <option>Vinted</option><option>major9.nl</option><option>Discogs</option><option>Anders</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row" style="margin-top:12px;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Verkoopprijs (€)</label>
+          <input type="number" class="form-input" id="tVerkoop" step="0.01" placeholder="0.00">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Inkoopprijs (€)</label>
+          <input type="number" class="form-input" id="tInkoop" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:12px; margin-bottom:0;">
+        <label class="form-label">Notities</label>
+        <textarea class="form-textarea" id="tNotes" rows="2" placeholder="Optioneel…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('transModal')">Annuleren</button>
+      <button class="btn btn-primary" onclick="saveTrans()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- BULK MODAL -->
+<div class="modal-overlay" id="bulkModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Bulk invoer</div>
+      <button class="modal-close" onclick="closeModal('bulkModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="tabs mb-16" id="bulkTabs">
+        <button class="tab active" onclick="setBulkTab('dag',this)">Per dag</button>
+        <button class="tab" onclick="setBulkTab('week',this)">Per week</button>
+        <button class="tab" onclick="setBulkTab('maand',this)">Per maand</button>
+        <button class="tab" onclick="setBulkTab('kwartaal',this)">Per kwartaal</button>
+      </div>
+
+      <div class="form-row mb-12">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" id="bDateLabel">Datum</label>
+          <input type="date" class="form-input" id="bDatum">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Kanaal</label>
+          <select class="form-select" id="bKanaal">
+            <option>Vinted</option><option>major9.nl</option><option>Discogs</option><option>Anders</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row mb-12">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Totale omzet (€)</label>
+          <input type="number" class="form-input" id="bOmzet" step="0.01" placeholder="0.00">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Totale inkoop (€)</label>
+          <input type="number" class="form-input" id="bInkoop" step="0.01" placeholder="0.00">
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label">Omschrijving</label>
+        <input type="text" class="form-input" id="bDesc" placeholder="bijv. Dagomzet Vinted">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('bulkModal')">Annuleren</button>
+      <button class="btn btn-primary" onclick="saveBulk()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- INKOOP MODAL -->
+<div class="modal-overlay" id="inkoopModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Inkoop toevoegen</div>
+      <button class="modal-close" onclick="closeModal('inkoopModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row mb-12">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Datum</label>
+          <input type="date" class="form-input" id="iDatum">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Leverancier</label>
+          <select class="form-select" id="iLev">
+            <option>Bertus</option><option>Discogs Marketplace</option><option>Japan</option><option>Anders</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Omschrijving</label>
+        <input type="text" class="form-input" id="iDesc" placeholder="bijv. Order #335406">
+      </div>
+      <div class="form-row" style="margin-bottom:0;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Bedrag (€)</label>
+          <input type="number" class="form-input" id="iBedrag" step="0.01" placeholder="0.00">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Stuks</label>
+          <input type="number" class="form-input" id="iStuks" placeholder="0">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('inkoopModal')">Annuleren</button>
+      <button class="btn btn-primary" onclick="saveInkoop()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════ -->
+<script>
+// ── STATE ──────────────────────────────
+const ALLOWED_EMAILS = ['kjc.sariwating@gmail.com', 'order@major9.nl'];
+
+let S = {
+  user: null,
+  transacties: [],
+  inkopen: [],
+  collectie: [],
+  bertusEANs: {},
+  settings: {
+    discogsToken: '', discogsUsername: '', discogsFolderId: '',
+    fLaag: 1.5, fHoog: 1.7, fJapan: 2.5, fJPY: 160
+  },
+  period: 'month',
+  bulkTab: 'dag',
+  colPage: 1,
+  charts: {}
+};
+
+// ── STORAGE ────────────────────────────
+function save() {
+  try { localStorage.setItem('m9', JSON.stringify({
+    transacties: S.transacties, inkopen: S.inkopen,
+    collectie: S.collectie, bertusEANs: S.bertusEANs, settings: S.settings
+  })); } catch(e) {}
+}
+
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem('m9') || '{}');
+    if (d.transacties) S.transacties = d.transacties;
+    if (d.inkopen) S.inkopen = d.inkopen;
+    if (d.collectie) S.collectie = d.collectie;
+    if (d.bertusEANs) S.bertusEANs = d.bertusEANs;
+    if (d.settings) S.settings = { ...S.settings, ...d.settings };
+  } catch(e) {}
+}
+
+// ── AUTH ───────────────────────────────
+const PASSWORD = 'major9vinyl2026'; // Verander dit naar jouw wachtwoord
+
+function doLogin() {
+  const pw = document.getElementById('loginPassword').value;
+  const err = document.getElementById('loginError');
+  if (pw === PASSWORD) {
+    err.style.display = 'none';
+    S.user = { name: 'Kaja Sariwating', email: 'order@major9.nl' };
+    sessionStorage.setItem('m9user', JSON.stringify(S.user));
+    showApp();
+  } else {
+    err.style.display = 'block';
+    document.getElementById('loginPassword').value = '';
+    document.getElementById('loginPassword').focus();
+  }
+}
+
+function signOut() {
+  if (!confirm('Uitloggen?')) return;
+  S.user = null;
+  sessionStorage.removeItem('m9user');
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginPassword').value = '';
+}
+
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+
+  // Update sidebar user
+  const u = S.user;
+  document.getElementById('sidebarName').textContent = u.name || 'Major9';
+  document.getElementById('sidebarEmail').textContent = u.email || '';
+  const av = document.getElementById('sidebarAvatar');
+  if (u.picture) {
+    av.innerHTML = `<img src="${u.picture}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">`;
+  } else {
+    av.textContent = (u.name || 'M')[0].toUpperCase();
+  }
+
+  // Load settings into form
+  loadSettingsForm();
+
+  // Check discogs
+  if (S.settings.discogsToken && S.settings.discogsUsername) {
+    updateDiscogsStatus(true);
+  }
+
+  renderDashboard();
+}
+
+// ── THEME ──────────────────────────────
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('themeIcon').textContent = isDark ? '☽' : '☀';
+  try { localStorage.setItem('m9theme', isDark ? 'light' : 'dark'); } catch(e) {}
+}
+
+// ── NAVIGATION ─────────────────────────
+const PAGE_TITLES = {
+  dashboard: 'Dashboard', collectie: 'Collectie & Voorraad',
+  transacties: 'Transacties', analyse: 'Analyse',
+  inkoop: 'Inkoop', instellingen: 'Instellingen'
+};
+
+function nav(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page)?.classList.add('active');
+  document.getElementById('pageTitle').textContent = PAGE_TITLES[page] || page;
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick')?.includes("'" + page + "'")) n.classList.add('active');
+  });
+  if (page === 'dashboard') renderDashboard();
+  if (page === 'transacties') renderTrans();
+  if (page === 'analyse') renderAnalyse();
+  if (page === 'inkoop') renderInkoop();
+  if (page === 'collectie') renderCollectie();
+  if (page === 'instellingen') loadSettingsForm();
+}
+
+// ── MODALS ─────────────────────────────
+function openModal(id) {
+  const today = new Date().toISOString().split('T')[0];
+  document.querySelectorAll(`#${id} input[type=date]`).forEach(el => { if (!el.value) el.value = today; });
+  document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+
+// ── PERIOD ─────────────────────────────
+function setPeriod(p) {
+  S.period = p;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  renderDashboard();
+}
+
+function filterPeriod(items, f = 'datum') {
+  const now = new Date();
+  return items.filter(item => {
+    const d = new Date(item[f]);
+    if (isNaN(d) || S.period === 'all') return true;
+    if (S.period === 'week') { const w = new Date(now); w.setDate(now.getDate()-7); return d >= w; }
+    if (S.period === 'month') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    if (S.period === 'quarter') return Math.floor(d.getMonth()/3) === Math.floor(now.getMonth()/3) && d.getFullYear() === now.getFullYear();
+    if (S.period === 'year') return d.getFullYear() === now.getFullYear();
+    return true;
+  });
+}
+
+// ── HELPERS ────────────────────────────
+const eur = n => isNaN(n) ? '€0' : '€' + Math.abs(parseFloat(n)).toLocaleString('nl-NL', {minimumFractionDigits:2,maximumFractionDigits:2});
+const pct = n => isNaN(n) ? '0%' : (parseFloat(n)*100).toFixed(1)+'%';
+const fmtDate = s => { try { return new Date(s).toLocaleDateString('nl-NL',{day:'2-digit',month:'2-digit',year:'2-digit'}); } catch(e) { return s||'—'; } };
+
+function markup(inkoop, factor) {
+  const v = inkoop * factor;
+  const c = Math.ceil(v);
+  let p = c - 0.01;
+  if (p < v) p = c + 0.99;
+  return Math.round(p * 100) / 100;
+}
+
+// ── CHART HELPERS ──────────────────────
+const chartDefaults = (dark) => ({
+  responsive: true,
+  plugins: { legend: { labels: { color: dark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)', font: { size: 11, family: 'Inter' } } } },
+  scales: {
+    x: { ticks: { color: dark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)', font: { size: 10 } }, grid: { color: dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.05)' } },
+    y: { ticks: { color: dark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)', font: { size: 10 } }, grid: { color: dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.05)' } }
+  }
+});
+
+function isDark() { return document.documentElement.getAttribute('data-theme') === 'dark'; }
+
+function destroyChart(key) { if (S.charts[key]) { S.charts[key].destroy(); delete S.charts[key]; } }
+
+// ── DASHBOARD ──────────────────────────
+function renderDashboard() {
+  const items = filterPeriod(S.transacties);
+  const omzet = items.reduce((s,t) => s+(t.verkoop||0), 0);
+  const inkoop = items.reduce((s,t) => s+(t.inkoop||0), 0);
+  const winst = omzet - inkoop;
+  const marge = omzet > 0 ? winst/omzet : 0;
+  const voorraad = S.collectie.reduce((s,a) => s+(parseFloat(a.prijs)||0), 0);
+
+  document.getElementById('k-omzet').textContent = eur(omzet);
+  document.getElementById('k-inkoop').textContent = eur(inkoop);
+  document.getElementById('k-winst').textContent = eur(winst);
+  document.getElementById('k-marge').textContent = pct(marge);
+  document.getElementById('k-voorraad').textContent = eur(voorraad);
+  document.getElementById('k-omzet-sub').textContent = `${items.length} transacties`;
+  document.getElementById('k-winst-sub').textContent = pct(marge) + ' marge';
+
+  renderRecentTrans(items);
+  renderDashCharts(items);
+}
+
+function renderRecentTrans(items) {
+  const recent = [...items].sort((a,b) => new Date(b.datum)-new Date(a.datum)).slice(0,8);
+  const tb = document.getElementById('recentTbody');
+  if (!recent.length) {
+    tb.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">🎵</div><div class="empty-title">Geen transacties</div></div></td></tr>`;
+    return;
+  }
+  tb.innerHTML = recent.map(t => `<tr>
+    <td class="td-muted">${fmtDate(t.datum)}</td>
+    <td>${t.album}</td>
+    <td class="td-green">${eur(t.verkoop)}</td>
+    <td class="td-muted">${eur(t.inkoop)}</td>
+    <td class="${t.winst>=0?'td-green':'td-red'}">${eur(t.winst)}</td>
+    <td><span class="badge badge-gray">${t.kanaal||'—'}</span></td>
+  </tr>`).join('');
+}
+
+function renderDashCharts(items) {
+  const byDate = {};
+  items.forEach(t => {
+    const d = (t.datum||'').substring(0,10);
+    if (!d) return;
+    if (!byDate[d]) byDate[d] = {v:0,i:0};
+    byDate[d].v += t.verkoop||0;
+    byDate[d].i += t.inkoop||0;
+  });
+  const dates = Object.keys(byDate).sort();
+  const labels = dates.map(d => { const p=d.split('-'); return p.length>=3?`${p[2]}/${p[1]}`:d; });
+  const vd = dates.map(d => byDate[d].v);
+  const id = dates.map(d => byDate[d].i);
+  const wd = dates.map(d => byDate[d].v - byDate[d].i);
+  const md = dates.map(d => byDate[d].v > 0 ? ((byDate[d].v-byDate[d].i)/byDate[d].v*100) : 0);
+
+  const cd = chartDefaults(isDark());
+  const gold = '#B8860B', green = '#34C759', red = '#FF3B30';
+
+  destroyChart('omzet');
+  S.charts.omzet = new Chart(document.getElementById('cOmzet').getContext('2d'), {
+    type:'bar', data:{ labels,
+      datasets:[
+        { label:'Omzet', data:vd, backgroundColor:'rgba(184,134,11,0.75)', borderRadius:4 },
+        { label:'Inkoop', data:id, backgroundColor:'rgba(255,59,48,0.5)', borderRadius:4 }
+      ]
+    }, options:cd
+  });
+
+  destroyChart('marge');
+  S.charts.marge = new Chart(document.getElementById('cMarge').getContext('2d'), {
+    type:'line', data:{ labels,
+      datasets:[{ label:'Marge %', data:md, borderColor:gold, backgroundColor:'rgba(184,134,11,0.08)', fill:true, tension:0.4, pointRadius:3 }]
+    }, options:cd
+  });
+
+  destroyChart('winst');
+  S.charts.winst = new Chart(document.getElementById('cWinst').getContext('2d'), {
+    type:'line', data:{ labels,
+      datasets:[{ label:'Winst', data:wd, borderColor:green, backgroundColor:'rgba(52,199,89,0.08)', fill:true, tension:0.4, pointRadius:3 }]
+    }, options:cd
+  });
+
+  const kanaalTot = {};
+  items.forEach(t => { const k=t.kanaal||'Onbekend'; kanaalTot[k]=(kanaalTot[k]||0)+(t.verkoop||0); });
+  destroyChart('kanaal');
+  S.charts.kanaal = new Chart(document.getElementById('cKanaal').getContext('2d'), {
+    type:'doughnut', data:{
+      labels:Object.keys(kanaalTot),
+      datasets:[{ data:Object.values(kanaalTot), backgroundColor:[gold,green,'#007AFF',red,'#888'], borderWidth:0 }]
+    }, options:{ responsive:true, plugins:{ legend:{ position:'bottom', labels:{ color:isDark()?'rgba(255,255,255,0.5)':'rgba(0,0,0,0.5)', font:{size:11,family:'Inter'}, padding:10 } } } }
+  });
+}
+
+// ── TRANSACTIES ────────────────────────
+function renderTrans() {
+  const search = (document.getElementById('transSearch')?.value||'').toLowerCase();
+  const kanaal = document.getElementById('transKanaal')?.value||'';
+  let items = filterPeriod(S.transacties);
+  if (search) items = items.filter(t => t.album.toLowerCase().includes(search)||(t.kanaal||'').toLowerCase().includes(search));
+  if (kanaal) items = items.filter(t => t.kanaal===kanaal);
+  items = [...items].sort((a,b) => new Date(b.datum)-new Date(a.datum));
+  document.getElementById('transCount').textContent = `${items.length} transacties`;
+  const tb = document.getElementById('transTbody');
+  if (!items.length) {
+    tb.innerHTML=`<tr><td colspan="8"><div class="empty"><div class="empty-icon">🎵</div><div class="empty-title">Geen transacties</div></div></td></tr>`;
+    return;
+  }
+  tb.innerHTML = items.map(t => {
+    const m = t.verkoop>0 ? t.winst/t.verkoop : 0;
+    return `<tr>
+      <td class="td-muted">${fmtDate(t.datum)}</td>
+      <td>${t.album}</td>
+      <td class="td-green">${eur(t.verkoop)}</td>
+      <td class="td-muted">${eur(t.inkoop)}</td>
+      <td class="${t.winst>=0?'td-green':'td-red'}">${eur(t.winst)}</td>
+      <td class="td-gold">${pct(m)}</td>
+      <td><span class="badge badge-gray">${t.kanaal||'—'}</span></td>
+      <td><button onclick="deleteTrans(${t.id})" class="btn btn-ghost btn-sm btn-icon">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function saveTrans() {
+  const album = document.getElementById('tAlbum').value || document.getElementById('tSearch').value;
+  const datum = document.getElementById('tDatum').value;
+  const kanaal = document.getElementById('tKanaal').value;
+  const verkoop = parseFloat(document.getElementById('tVerkoop').value)||0;
+  const inkoop = parseFloat(document.getElementById('tInkoop').value)||0;
+  if (!album||!datum||!verkoop) { alert('Vul album, datum en verkoopprijs in.'); return; }
+  S.transacties.push({ id:Date.now(), album, datum, kanaal, verkoop, inkoop, winst:verkoop-inkoop, notes:document.getElementById('tNotes').value });
+  save();
+  closeModal('transModal');
+  resetTransForm();
+  renderDashboard(); renderTrans();
+}
+
+function resetTransForm() {
+  ['tSearch','tAlbum','tNotes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['tVerkoop','tInkoop'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('tSelected').classList.remove('show');
+  document.getElementById('tSuggest').style.display='none';
+}
+
+function deleteTrans(id) {
+  if (!confirm('Verwijderen?')) return;
+  S.transacties = S.transacties.filter(t => t.id!==id);
+  save(); renderTrans(); renderDashboard();
+}
+
+// ── BULK ───────────────────────────────
+let bulkTab = 'dag';
+
+function setBulkTab(tab, el) {
+  bulkTab = tab;
+  document.querySelectorAll('#bulkTabs .tab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  const labels = { dag:'Datum', week:'Week (begindatum)', maand:'Maand', kwartaal:'Kwartaal (begindatum)' };
+  document.getElementById('bDateLabel').textContent = labels[tab];
+}
+
+function saveBulk() {
+  const datum = document.getElementById('bDatum').value;
+  const kanaal = document.getElementById('bKanaal').value;
+  const omzet = parseFloat(document.getElementById('bOmzet').value)||0;
+  const inkoop = parseFloat(document.getElementById('bInkoop').value)||0;
+  const desc = document.getElementById('bDesc').value || `Bulk ${bulkTab}`;
+  if (!datum||!omzet) { alert('Vul datum en omzet in.'); return; }
+  S.transacties.push({ id:Date.now(), album:desc, datum, kanaal, verkoop:omzet, inkoop, winst:omzet-inkoop, type:bulkTab });
+  save(); closeModal('bulkModal');
+  document.getElementById('bOmzet').value=''; document.getElementById('bInkoop').value=''; document.getElementById('bDesc').value='';
+  renderDashboard(); renderTrans();
+}
+
+// ── INKOOP ─────────────────────────────
+function saveInkoop() {
+  const datum=document.getElementById('iDatum').value;
+  const lev=document.getElementById('iLev').value;
+  const desc=document.getElementById('iDesc').value;
+  const bedrag=parseFloat(document.getElementById('iBedrag').value)||0;
+  const stuks=parseInt(document.getElementById('iStuks').value)||0;
+  if (!datum||!bedrag) { alert('Vul datum en bedrag in.'); return; }
+  S.inkopen.push({ id:Date.now(), datum, lev, desc, bedrag, stuks });
+  save(); closeModal('inkoopModal'); renderInkoop();
+}
+
+function renderInkoop() {
+  const items = [...S.inkopen].sort((a,b) => new Date(b.datum)-new Date(a.datum));
+  const tb = document.getElementById('inkoopTbody');
+  if (!items.length) {
+    tb.innerHTML=`<tr><td colspan="7"><div class="empty"><div class="empty-icon">📦</div><div class="empty-title">Nog geen inkopen</div></div></td></tr>`;
+    return;
+  }
+  tb.innerHTML = items.map(i => `<tr>
+    <td class="td-muted">${fmtDate(i.datum)}</td>
+    <td><span class="badge badge-gold">${i.lev}</span></td>
+    <td>${i.desc||'—'}</td>
+    <td class="td-red">${eur(i.bedrag)}</td>
+    <td class="td-muted">${i.stuks||'—'}</td>
+    <td class="td-muted">${i.stuks?eur(i.bedrag/i.stuks):'—'}</td>
+    <td><button onclick="deleteInkoop(${i.id})" class="btn btn-ghost btn-sm btn-icon">✕</button></td>
+  </tr>`).join('');
+}
+
+function deleteInkoop(id) {
+  if (!confirm('Verwijderen?')) return;
+  S.inkopen = S.inkopen.filter(i => i.id!==id);
+  save(); renderInkoop();
+}
+
+// ── ANALYSE ────────────────────────────
+function renderAnalyse() {
+  const byMaand = {};
+  S.transacties.forEach(t => {
+    if (!t.datum) return;
+    const d = new Date(t.datum);
+    const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if (!byMaand[k]) byMaand[k] = {v:0,i:0,n:0};
+    byMaand[k].v += t.verkoop||0; byMaand[k].i += t.inkoop||0; byMaand[k].n++;
+  });
+  const maanden = Object.keys(byMaand).sort();
+  const cd = chartDefaults(isDark());
+
+  destroyChart('maand');
+  S.charts.maand = new Chart(document.getElementById('cMaand').getContext('2d'), {
+    type:'bar', data:{ labels:maanden,
+      datasets:[
+        { label:'Omzet', data:maanden.map(m=>byMaand[m].v), backgroundColor:'rgba(184,134,11,0.75)', borderRadius:4 },
+        { label:'Winst', data:maanden.map(m=>byMaand[m].v-byMaand[m].i), backgroundColor:'rgba(52,199,89,0.6)', borderRadius:4 }
+      ]
+    }, options:cd
+  });
+
+  const kanaalW = {};
+  S.transacties.forEach(t => { const k=t.kanaal||'Onbekend'; kanaalW[k]=(kanaalW[k]||0)+((t.verkoop||0)-(t.inkoop||0)); });
+  destroyChart('kanaalWinst');
+  S.charts.kanaalWinst = new Chart(document.getElementById('cKanaalWinst').getContext('2d'), {
+    type:'bar', data:{ labels:Object.keys(kanaalW), datasets:[{ label:'Winst', data:Object.values(kanaalW), backgroundColor:'#34C759', borderRadius:4 }] },
+    options:{ ...cd, plugins:{ legend:{ display:false } } }
+  });
+
+  const tb = document.getElementById('analyseTbody');
+  if (!maanden.length) { tb.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3);">Geen data</td></tr>`; return; }
+  tb.innerHTML = [...maanden].reverse().map(m => {
+    const d=byMaand[m], w=d.v-d.i, mg=d.v>0?w/d.v:0, gem=d.n>0?d.v/d.n:0;
+    const [y,mo]=m.split('-');
+    const naam=new Date(y,mo-1).toLocaleDateString('nl-NL',{month:'long',year:'numeric'});
+    return `<tr>
+      <td>${naam}</td>
+      <td class="td-green">${eur(d.v)}</td>
+      <td class="td-muted">${eur(d.i)}</td>
+      <td class="td-green">${eur(w)}</td>
+      <td class="td-gold">${pct(mg)}</td>
+      <td class="td-muted">${d.n}</td>
+      <td class="td-muted">${eur(gem)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── COLLECTIE ──────────────────────────
+async function syncDiscogs() {
+  const {discogsToken:tok, discogsUsername:user, discogsFolderId:fid} = S.settings;
+  if (!tok||!user) { alert('Voer eerst je Discogs token en gebruikersnaam in bij Instellingen.'); nav('instellingen'); return; }
+  const grid = document.getElementById('colGrid');
+  grid.innerHTML = '<div class="loading-row"><div class="spinner"></div> Collectie ophalen…</div>';
+  try {
+    let items=[], page=1, total=1;
+    const folder = fid||'0';
+    while (page<=total) {
+      const url=`https://api.discogs.com/users/${user}/collection/folders/${folder}/releases?page=${page}&per_page=100&token=${tok}`;
+      const r=await fetch(url); if (!r.ok) throw new Error('API fout '+r.status);
+      const data=await r.json();
+      total=data.pagination.pages;
+      items=items.concat(data.releases);
+      grid.innerHTML=`<div class="loading-row"><div class="spinner"></div> ${items.length} van ${data.pagination.items} albums…</div>`;
+      page++; if(page<=total) await new Promise(r=>setTimeout(r,500));
+    }
+    S.collectie = items.map(item => {
+      const info=item.basic_information;
+      const artist=(info.artists||[]).map(a=>a.name.replace(/\s*\(\d+\)$/,'')).join(', ');
+      const col = { id:item.id, releaseId:info.id, title:info.title, artist, label:(info.labels||[{}])[0]?.name||'', year:info.year||'', cover:info.cover_image||info.thumb||'', genres:info.genres||[], styles:info.styles||[], prijs:'', inkoop:'' };
+      // Try to match EAN
+      return col;
+    });
+    save(); updateDiscogsStatus(true); renderCollectie();
+  } catch(e) {
+    grid.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">Fout</div><div class="empty-sub">${e.message}</div></div>`;
+  }
+}
+
+function renderCollectie() {
+  const search=(document.getElementById('colSearch')?.value||'').toLowerCase();
+  const genre=document.getElementById('genreFilter')?.value||'';
+  let items=S.collectie;
+  if (search) items=items.filter(a=>`${a.artist} ${a.title}`.toLowerCase().includes(search)||(a.label||'').toLowerCase().includes(search));
+  if (genre) items=items.filter(a=>(a.genres||[]).includes(genre)||(a.styles||[]).includes(genre));
+
+  const metPrijs=S.collectie.filter(a=>parseFloat(a.prijs)>0).length;
+  const waarde=S.collectie.reduce((s,a)=>s+(parseFloat(a.prijs)||0),0);
+  document.getElementById('col-total').textContent=S.collectie.length;
+  document.getElementById('col-priced').textContent=metPrijs;
+  document.getElementById('col-unpriced').textContent=S.collectie.length-metPrijs;
+  document.getElementById('col-value').textContent=eur(waarde);
+
+  // Genre filter
+  const genres=[...new Set(S.collectie.flatMap(a=>[...(a.genres||[]),...(a.styles||[])]))].sort();
+  const gf=document.getElementById('genreFilter');
+  if (gf) { const cur=gf.value; gf.innerHTML='<option value="">Alle genres</option>'+genres.map(g=>`<option value="${g}"${g===cur?' selected':''}>${g}</option>`).join(''); }
+
+  const perPage=48;
+  const pages=Math.ceil(items.length/perPage);
+  if (S.colPage>pages) S.colPage=1;
+  const pageItems=items.slice((S.colPage-1)*perPage, S.colPage*perPage);
+  const grid=document.getElementById('colGrid');
+  if (!items.length) {
+    grid.innerHTML=S.collectie.length
+      ? `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">⌕</div><div class="empty-title">Geen resultaten</div></div>`
+      : `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🎵</div><div class="empty-title">Collectie leeg</div><div class="empty-sub">Klik op Sync Discogs</div></div>`;
+    document.getElementById('colPag').innerHTML=''; return;
+  }
+  grid.innerHTML=pageItems.map(a=>`
+    <div class="album-card">
+      ${a.cover
+        ? `<img class="album-cover" src="${a.cover}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+        : ''}
+      <div class="album-placeholder" ${a.cover?'style="display:none;"':''}}>♪</div>
+      <div class="album-info">
+        <div class="album-artist truncate">${a.artist}</div>
+        <div class="album-title truncate">${a.title}</div>
+        ${parseFloat(a.prijs)>0
+          ? `<div class="album-price">${eur(parseFloat(a.prijs))}</div>`
+          : `<div class="album-no-price">Geen prijs</div>`}
+      </div>
+    </div>`).join('');
+
+  // Pagination
+  const pag=document.getElementById('colPag');
+  if (pages<=1) { pag.innerHTML=''; return; }
+  pag.innerHTML=Array.from({length:Math.min(pages,10)},(_,i)=>`<button class="pag-btn${i+1===S.colPage?' active':''}" onclick="colPage(${i+1})">${i+1}</button>`).join('')+(pages>10?`<span style="color:var(--text3);padding:0 8px;">…${pages}</span>`:'');
+}
+
+function colPage(p) { S.colPage=p; renderCollectie(); }
+
+// ── ALBUM AUTOCOMPLETE ─────────────────
+let acResults = [];
+
+function albumSearch() {
+  const q=(document.getElementById('tSearch')?.value||'').toLowerCase().trim();
+  const list=document.getElementById('tSuggest');
+  if (q.length<2) { list.style.display='none'; return; }
+  acResults=S.collectie.filter(a=>`${a.artist} ${a.title}`.toLowerCase().includes(q)||a.title.toLowerCase().includes(q)||a.artist.toLowerCase().includes(q)).slice(0,8);
+  if (!acResults.length) { list.style.display='none'; document.getElementById('tAlbum').value=document.getElementById('tSearch').value; return; }
+  list.innerHTML=acResults.map((a,i)=>`
+    <div class="autocomplete-item" onclick="selectAlbum(${i})">
+      ${a.cover?`<img class="autocomplete-thumb" src="${a.cover}" onerror="this.style.display='none'">`:`<div class="autocomplete-thumb" style="display:flex;align-items:center;justify-content:center;color:var(--text3);">♪</div>`}
+      <div class="autocomplete-text">
+        <div class="autocomplete-name">${a.artist} — ${a.title}</div>
+        <div class="autocomplete-sub">${[a.label,a.year].filter(Boolean).join(' · ')}</div>
+      </div>
+      ${parseFloat(a.prijs)>0?`<div class="autocomplete-price">${eur(parseFloat(a.prijs))}</div>`:''}
+    </div>`).join('');
+  list.style.display='block';
+}
+
+function selectAlbum(i) {
+  const a=acResults[i]; if (!a) return;
+  document.getElementById('tSuggest').style.display='none';
+  document.getElementById('tSearch').value=`${a.artist} — ${a.title}`;
+  document.getElementById('tAlbum').value=`${a.artist} - ${a.title}`;
+  const sel=document.getElementById('tSelected');
+  sel.classList.add('show');
+  const thumb=document.getElementById('tThumb');
+  if (a.cover) { thumb.src=a.cover; thumb.style.display='block'; } else { thumb.style.display='none'; }
+  document.getElementById('tSelName').textContent=`${a.artist} — ${a.title}`;
+  document.getElementById('tSelLabel').textContent=[a.label,a.year].filter(Boolean).join(' · ');
+  if (parseFloat(a.inkoop)>0) { document.getElementById('tInkoop').value=parseFloat(a.inkoop).toFixed(2); document.getElementById('tSelAdvies').textContent=`Inkoop: ${eur(parseFloat(a.inkoop))}`; }
+  if (parseFloat(a.prijs)>0) { document.getElementById('tVerkoop').value=parseFloat(a.prijs).toFixed(2); document.getElementById('tSelPrice').textContent=eur(parseFloat(a.prijs)); }
+}
+
+function resetAlbum() {
+  document.getElementById('tSearch').value=''; document.getElementById('tAlbum').value='';
+  document.getElementById('tSelected').classList.remove('show');
+  document.getElementById('tInkoop').value=''; document.getElementById('tVerkoop').value='';
+}
+
+document.addEventListener('click', e => {
+  const list=document.getElementById('tSuggest');
+  if (list&&!list.contains(e.target)&&e.target.id!=='tSearch') list.style.display='none';
+});
+
+// ── SETTINGS ───────────────────────────
+function loadSettingsForm() {
+  const s=S.settings;
+  document.getElementById('sToken').value=s.discogsToken||'';
+  document.getElementById('sUsername').value=s.discogsUsername||'';
+  document.getElementById('sFolderId').value=s.discogsFolderId||'';
+  document.getElementById('fLaag').value=s.fLaag||1.5;
+  document.getElementById('fHoog').value=s.fHoog||1.7;
+  document.getElementById('fJapan').value=s.fJapan||2.5;
+  document.getElementById('fJPY').value=s.fJPY||160;
+}
+
+async function saveDiscogs() {
+  S.settings.discogsToken=document.getElementById('sToken').value.trim();
+  S.settings.discogsUsername=document.getElementById('sUsername').value.trim();
+  S.settings.discogsFolderId=document.getElementById('sFolderId').value.trim();
+  save();
+  const msg=document.getElementById('discogsTestMsg');
+  msg.textContent='Testen…'; msg.style.color='var(--text2)';
+  try {
+    const r=await fetch(`https://api.discogs.com/users/${S.settings.discogsUsername}?token=${S.settings.discogsToken}`);
+    if (r.ok) { const d=await r.json(); msg.textContent=`✓ ${d.username} · ${d.num_collection} albums`; msg.style.color='var(--green)'; updateDiscogsStatus(true); }
+    else { msg.textContent=`✗ Fout ${r.status}`; msg.style.color='var(--red)'; }
+  } catch(e) { msg.textContent='✗ Verbindingsfout'; msg.style.color='var(--red)'; }
+}
+
+function saveFactors() {
+  S.settings.fLaag=parseFloat(document.getElementById('fLaag').value)||1.5;
+  S.settings.fHoog=parseFloat(document.getElementById('fHoog').value)||1.7;
+  S.settings.fJapan=parseFloat(document.getElementById('fJapan').value)||2.5;
+  S.settings.fJPY=parseFloat(document.getElementById('fJPY').value)||160;
+  save(); alert('Opgeslagen!');
+}
+
+function updateDiscogsStatus(on) {
+  document.getElementById('discogsDot').className='status-dot'+(on?' on':'');
+  document.getElementById('discogsLabel').textContent=on?(S.settings.discogsUsername||'Verbonden'):'Discogs';
+}
+
+// ── BERTUS IMPORT ──────────────────────
+function importBertus(event) {
+  const files=Array.from(event.target.files); if (!files.length) return;
+  const msg=document.getElementById('bertusMsg');
+  msg.textContent=`${files.length} bestand(en) verwerken…`;
+  let allEANs={}, done=0;
+  files.forEach(file => {
+    const r=new FileReader();
+    r.onload=e => {
+      const lines=e.target.result.split('\n').filter(l=>l.trim());
+      if (!lines.length) { done++; check(); return; }
+      const sep=lines[0].includes(';')?';':',';
+      const hdrs=lines[0].split(sep).map(h=>h.trim().toLowerCase().replace(/['"]/g,''));
+      const eanIdx=hdrs.findIndex(h=>h.includes('ean')||h.includes('barcode'));
+      const priceIdx=hdrs.findIndex(h=>h==='itemprice'||h.includes('price'));
+      if (eanIdx===-1||priceIdx===-1) { done++; check(); return; }
+      for (let i=1;i<lines.length;i++) {
+        const vals=lines[i].split(sep).map(v=>v.trim().replace(/['"]/g,''));
+        let ean=(vals[eanIdx]||'').replace(/\D/g,'');
+        if (ean.length===12) ean='0'+ean;
+        const inkoop=parseFloat((vals[priceIdx]||'').replace(',','.'))||0;
+        if (ean.length===13&&inkoop>0) {
+          const f=inkoop>=S.settings.fHoog?S.settings.fHoog:S.settings.fLaag;
+          const verkoop=markup(inkoop,f);
+          allEANs[ean]={inkoop,verkoop};
+        }
+      }
+      done++; check();
+    };
+    r.readAsText(file);
+  });
+  function check() {
+    if (done<files.length) return;
+    S.bertusEANs={...S.bertusEANs,...allEANs};
+    let matched=0;
+    S.collectie.forEach(a => {
+      if (a.ean&&allEANs[a.ean]) { a.inkoop=allEANs[a.ean].inkoop; a.prijs=allEANs[a.ean].verkoop; matched++; }
+    });
+    save();
+    msg.innerHTML=`<span style="color:var(--green)">✓ ${Object.keys(allEANs).length} prijzen geladen${matched?' · '+matched+' albums gekoppeld':''}</span>${matched<S.collectie.length?` — <button class="btn btn-primary btn-sm" onclick="fetchAndMatchEANs()">EAN ophalen (${S.collectie.filter(a=>!a.ean&&!a.prijs).length} albums)</button>`:''}`;
+    event.target.value='';
+  }
+}
+
+async function fetchAndMatchEANs() {
+  const tok=S.settings.discogsToken; if (!tok) return;
+  const needsFetch=S.collectie.filter(a=>!a.ean&&!a.prijs&&a.releaseId);
+  const msg=document.getElementById('bertusMsg');
+  let matched=0;
+  for (let i=0;i<Math.min(needsFetch.length,150);i++) {
+    const a=needsFetch[i];
+    try {
+      const r=await fetch(`https://api.discogs.com/releases/${a.releaseId}?token=${tok}`);
+      if (!r.ok) { await new Promise(x=>setTimeout(x,1000)); continue; }
+      const data=await r.json();
+      const barcodes=(data.identifiers||[]).filter(x=>x.type==='Barcode').map(x=>x.value.replace(/\D/g,''));
+      for (let bc of barcodes) {
+        if (bc.length===12) bc='0'+bc;
+        if (S.bertusEANs[bc]) { a.ean=bc; a.inkoop=S.bertusEANs[bc].inkoop; a.prijs=S.bertusEANs[bc].verkoop; matched++; break; }
+      }
+      if (i%10===0) msg.innerHTML=`<span style="color:var(--text2)">EAN ophalen… ${i+1}/${Math.min(needsFetch.length,150)} (${matched} matches)</span>`;
+      await new Promise(x=>setTimeout(x,500));
+    } catch(e) { await new Promise(x=>setTimeout(x,1000)); }
+  }
+  save();
+  msg.innerHTML=`<span style="color:var(--green)">✓ Klaar! ${matched} extra albums gekoppeld.</span>`;
+  renderCollectie();
+}
+
+// ── CSV IMPORT/EXPORT ──────────────────
+function importCSV(event) {
+  const file=event.target.files[0]; if (!file) return;
+  const r=new FileReader();
+  r.onload=e => {
+    const lines=e.target.result.split('\n').filter(l=>l.trim());
+    if (!lines.length) return;
+    const sep=lines[0].includes(';')?';':',';
+    const hdrs=lines[0].split(sep).map(h=>h.trim().toLowerCase().replace(/['"]/g,''));
+    const get=(names,vals)=>{ for(const n of names){const i=hdrs.indexOf(n); if(i>=0&&vals[i])return vals[i];} return ''; };
+    let imported=0;
+    for (let i=1;i<lines.length;i++) {
+      const vals=lines[i].split(sep).map(v=>v.trim().replace(/['"]/g,''));
+      if (vals.length<2) continue;
+      const album=get(['album','omschrijving','titel','title'],vals);
+      const datum=get(['datum','date','dag'],vals);
+      const vs=get(['verkoopprijs','verkoop','prijs','price','omzet'],vals);
+      const is=get(['inkoopprijs','inkoop','cost'],vals);
+      const kanaal=get(['kanaal','channel','bron','source'],vals)||'Vinted';
+      const verkoop=parseFloat(vs.replace(',','.'))||0;
+      const inkoop=parseFloat(is.replace(',','.'))||0;
+      if (!verkoop&&!album) continue;
+      let pd=datum;
+      if (datum&&datum.includes('-')) { const p=datum.split('-'); if(p[0].length<=2) pd=`${p[2]||new Date().getFullYear()}-${String(p[1]).padStart(2,'0')}-${String(p[0]).padStart(2,'0')}`; }
+      S.transacties.push({id:Date.now()+i,album:album||'Import',datum:pd||new Date().toISOString().split('T')[0],kanaal,verkoop,inkoop,winst:verkoop-inkoop,type:'import'});
+      imported++;
+    }
+    save(); renderTrans(); renderDashboard();
+    alert(`${imported} transacties geïmporteerd!`);
+  };
+  r.readAsText(file); event.target.value='';
+}
+
+function exportCSV() {
+  const hdrs=['Datum','Album','Verkoopprijs','Inkoopprijs','Winst','Marge%','Kanaal'];
+  const rows=S.transacties.map(t=>[t.datum,`"${t.album}"`,t.verkoop,t.inkoop,t.winst,t.verkoop>0?((t.winst/t.verkoop)*100).toFixed(1):0,t.kanaal].join(';'));
+  const blob=new Blob([[hdrs.join(';'),...rows].join('\n')],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='major9_transacties.csv'; a.click();
+}
+
+function exportData() {
+  const blob=new Blob([JSON.stringify({transacties:S.transacties,inkopen:S.inkopen,collectie:S.collectie,bertusEANs:S.bertusEANs,settings:{...S.settings,discogsToken:'***'}},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='major9_backup.json'; a.click();
+}
+
+function importData(event) {
+  const file=event.target.files[0]; if (!file) return;
+  const r=new FileReader();
+  r.onload=e=>{ try { const d=JSON.parse(e.target.result); if(d.transacties)S.transacties=d.transacties; if(d.inkopen)S.inkopen=d.inkopen; if(d.collectie)S.collectie=d.collectie; if(d.bertusEANs)S.bertusEANs=d.bertusEANs; save(); renderDashboard(); alert('Geïmporteerd!'); } catch(e){alert('Ongeldig bestand');} };
+  r.readAsText(file); event.target.value='';
+}
+
+function clearData() {
+  if (!confirm('Alle data wissen? Dit kan niet ongedaan worden gemaakt.')) return;
+  S.transacties=[]; S.inkopen=[]; S.collectie=[]; save(); renderDashboard(); renderTrans();
+}
+
+// ── SALES DATA (MAJOR9_SALES juni-juli 2026) ──
+function loadSalesData() {
+  if (S.transacties.length) return;
+  const raw = [
+    // Juni 2026
+    {d:'2026-06-01',a:'Yussef Dayes & Tom Misch - What Kinda Music',v:29,i:21},
+    {d:'2026-06-01',a:'Yussef Dayes & Tom Misch - What Kinda Music',v:31.50,i:21},
+    {d:'2026-06-01',a:'Bundle 3 Nujabes',v:200,i:130},
+    {d:'2026-06-01',a:'Glass Beams - Mahal',v:25,i:17.70},
+    {d:'2026-06-01',a:'Jorge Ben - From Brasil',v:19,i:11.25},
+    {d:'2026-06-01',a:'Buena Vista Social Club - Buena Vista Social Club',v:35,i:23.50},
+    {d:'2026-06-02',a:'Thee Sacred Souls - Got A Story To Tell',v:23,i:15},
+    {d:'2026-06-02',a:'The Yussef Dayes Experience - Live From Mt. Fuji',v:32,i:22.20},
+    {d:'2026-06-02',a:'Tom Misch - Geography',v:36.30,i:17.49},
+    {d:'2026-06-03',a:'Thee Sinseers - Sinseerly Soulfully',v:35,i:19.90},
+    {d:'2026-06-03',a:'Olivia Dean - Messy',v:29,i:21.50},
+    {d:'2026-06-03',a:'Glass Beams - Mahal',v:24,i:17.70},
+    {d:'2026-06-03',a:'The Yussef Dayes Experience + Khruangbin - A La Sala',v:57,i:43.60},
+    {d:'2026-06-03',a:'Olivia Dean - The Art Of Loving',v:30,i:23.50},
+    {d:'2026-06-03',a:'Sade - Love Deluxe',v:35,i:16.50},
+    {d:'2026-06-03',a:'Hermanos Gutierrez - Sonido Cosmico',v:31,i:21.50},
+    {d:'2026-06-04',a:'Hermanos Gutierrez - Sonido Cosmico',v:30,i:21.50},
+    {d:'2026-06-04',a:'Bundle 2 Nujabes',v:130,i:89.50},
+    {d:'2026-06-04',a:'Nujabes - Modal Soul',v:45,i:29.50},
+    {d:'2026-06-04',a:'Bundle diversen',v:100,i:72.25},
+    {d:'2026-06-04',a:'Art Blakey - Moanin',v:25,i:12.70},
+    {d:'2026-06-05',a:'Bundle 2 Nujabes',v:126,i:89.50},
+    {d:'2026-06-05',a:'Maxwell - Urban Hang Suite',v:45,i:27.50},
+    {d:'2026-06-05',a:'Jalen Ngonda - Doctrine of Love (colored)',v:27,i:17.25},
+    {d:'2026-06-05',a:'Mobb Deep - Infamous + Nas - Illmatic',v:48,i:32.40},
+    {d:'2026-06-06',a:'Bundle diversen',v:97,i:78.70},
+    {d:'2026-06-06',a:'Jalen Ngonda - Doctrine of Love (black)',v:23,i:15.50},
+    {d:'2026-06-06',a:'Bundle Nujabes',v:125,i:85},
+    {d:'2026-06-06',a:'Nujabes - Modal Soul',v:50,i:29.50},
+    {d:'2026-06-06',a:'Donny Hathaway - Extension Of A Man',v:25,i:14.50},
+    {d:'2026-06-07',a:'Camp Lo - Uptown Saturday Night + Born Again + Mobb Deep',v:80,i:57.30},
+    {d:'2026-06-07',a:'Mobb Deep',v:30,i:19.90},
+    {d:'2026-06-07',a:'Jorge Ben - Jorge Ben 1969',v:21,i:13.55},
+    {d:'2026-06-07',a:'Janelle Monae - The Age Of Pleasure',v:26,i:16.25},
+    {d:'2026-06-07',a:'Bundle Khruangbin',v:43,i:31},
+    {d:'2026-06-07',a:'Bundle Khruangbin',v:48,i:32.05},
+    // Juli 2026
+    {d:'2026-07-08',a:'Glass Beams - Mahal',v:24,i:17.70},
+    {d:'2026-07-08',a:'Sade - Lovers Rock',v:29,i:16.50},
+    {d:'2026-07-08',a:'Nujabes - Metaphorical Music',v:50,i:38},
+    {d:'2026-07-09',a:'Marcus King - Young Blood',v:23.40,i:16.50},
+    {d:'2026-07-09',a:'Venna - Malik',v:28,i:13.75},
+    {d:'2026-07-09',a:'Bundel Takanaka',v:115,i:70},
+    {d:'2026-07-09',a:'Lenny Kravitz - 5',v:28.80,i:17},
+    {d:'2026-07-09',a:'Ryo Kawasaki - Juice',v:27,i:17},
+    {d:'2026-07-09',a:'Bundle Jazz',v:105.30,i:65.45},
+    {d:'2026-07-09',a:'Jalen Ngonda - Doctrine of Love (black)',v:25,i:15.50},
+    {d:'2026-07-09',a:'Ryo Kawasaki - Juice',v:29,i:17},
+    {d:'2026-07-09',a:'Don Blackman - Don Blackman',v:24,i:17.90},
+    {d:'2026-07-09',a:'Ghostface Killah - Ironman',v:29,i:19.90},
+    {d:'2026-07-09',a:'Bundel Donny Hathaway + Jalen Ngonda',v:43,i:30},
+    {d:'2026-07-10',a:"Bundle D'Angelo + Jazz",v:68,i:45.70},
+    {d:'2026-07-10',a:'Don Blackman - Don Blackman',v:25,i:17.90},
+    {d:'2026-07-10',a:'Don Blackman - Don Blackman',v:25,i:17.90},
+    {d:'2026-07-10',a:'Boyz II Men - Cooleyhighharmony',v:17.85,i:8.37},
+    {d:'2026-07-11',a:'El Michels Affair - 24 Hr Sports',v:20,i:13.45},
+    {d:'2026-07-11',a:'Wu-Tang Clan - Enter The Wu-Tang Clan',v:21,i:15.50},
+    {d:'2026-07-11',a:"Asap Rocky - Don't Be Dumb",v:27,i:21.50},
+    {d:'2026-07-12',a:'Olivia Dean - The Art Of Loving',v:34,i:23.50},
+    {d:'2026-07-12',a:'Jalen Ngonda - Doctrine of Love (black)',v:23,i:15.50},
+    {d:'2026-07-12',a:'Jalen Ngonda - Doctrine of Love (colored)',v:27,i:17.25},
+    {d:'2026-07-12',a:'Raye - This Music May Contain Hope',v:35,i:25.90},
+    {d:'2026-07-13',a:'Fugees - The Score',v:26,i:19.50},
+    {d:'2026-07-13',a:'Maxwell - Urban Hang Suite + Brandy - Brandy',v:63,i:46.25},
+    {d:'2026-07-13',a:'Cory Wong - Lost in the Wonder',v:28,i:18.60},
+    {d:'2026-07-13',a:'Ye - Bully',v:29,i:20.70},
+    {d:'2026-07-14',a:'Maxwell - Urban Hang Suite + Brandy - Brandy',v:45,i:27.50},
+    {d:'2026-07-14',a:'Nujabes bundle',v:195,i:129},
+    {d:'2026-07-14',a:'Masayoshi Takanaka - Brasilian Skies',v:75,i:29.35},
+    {d:'2026-07-14',a:'Jorge Ben - Jorge Ben 1969',v:20.30,i:13.55},
+  ];
+  S.transacties = raw.map((r,i) => ({
+    id: i+1, album: r.a, datum: r.d, kanaal: 'Vinted',
+    verkoop: r.v, inkoop: r.i, winst: r.v - r.i
+  }));
+}
+
+
+// ── INIT ───────────────────────────────
+(function init() {
+  load();
+
+  // Theme
+  const savedTheme = localStorage.getItem('m9theme');
+  if (savedTheme) {
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    document.getElementById('themeIcon').textContent = savedTheme==='light'?'☽':'☀';
+  }
+
+  // Load real sales data if no transactions yet
+  loadSalesData();
+
+  // Auto-login check via session
+  const savedUser = sessionStorage.getItem('m9user');
+  if (savedUser) {
+    try { S.user=JSON.parse(savedUser); showApp(); } catch(e) {}
+  } else {
+    // Focus password field
+    setTimeout(() => document.getElementById('loginPassword')?.focus(), 100);
+  }
+})();
+</script>
+</body>
+</html>
