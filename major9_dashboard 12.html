@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="nl" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Major9 — Vinyl Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --gold: #B8860B; --gold-light: #D4A017; --gold-subtle: rgba(184,134,11,0.12);
+  --green: #34C759; --red: #FF3B30; --blue: #007AFF;
+  --font: 'Inter', -apple-system, sans-serif;
+  --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 20px;
+  --blur: blur(20px); --tr: 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+[data-theme="dark"] {
+  --bg:#000; --surface:rgba(28,28,30,0.8); --surface-s:#1C1C1E;
+  --surface2:rgba(44,44,46,0.6); --surface2-s:#2C2C2E; --surface3:#3A3A3C;
+  --border:rgba(255,255,255,0.08); --border-s:rgba(255,255,255,0.15);
+  --text:#fff; --text2:rgba(255,255,255,0.6); --text3:rgba(255,255,255,0.35);
+  --sidebar:rgba(18,18,18,0.92); --topbar:rgba(0,0,0,0.72);
+  --card:rgba(28,28,30,0.7); --input:rgba(44,44,46,0.8);
+  --hover:rgba(255,255,255,0.06); --shadow:0 8px 32px rgba(0,0,0,0.6);
+  --shadow-s:0 2px 8px rgba(0,0,0,0.4);
+}
+[data-theme="light"] {
+  --bg:#F2F2F7; --surface:rgba(255,255,255,0.72); --surface-s:#fff;
+  --surface2:rgba(242,242,247,0.8); --surface2-s:#F2F2F7; --surface3:#E5E5EA;
+  --border:rgba(0,0,0,0.08); --border-s:rgba(0,0,0,0.15);
+  --text:#000; --text2:rgba(0,0,0,0.55); --text3:rgba(0,0,0,0.3);
+  --sidebar:rgba(242,242,247,0.92); --topbar:rgba(242,242,247,0.72);
+  --card:rgba(255,255,255,0.8); --input:rgba(242,242,247,0.9);
+  --hover:rgba(0,0,0,0.04); --shadow:0 8px 32px rgba(0,0,0,0.12);
+  --shadow-s:0 2px 8px rgba(0,0,0,0.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
+
+/* SIDEBAR */
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:220px;background:var(--sidebar);backdrop-filter:var(--blur);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100}
+.sidebar-header{padding:20px 20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-light));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+.sidebar-name{font-size:13px;font-weight:600}
+.sidebar-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.nav-groups{padding:12px 10px;flex:1;overflow-y:auto}
+.nav-group{margin-bottom:20px}
+.nav-group-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding:0 10px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--r-sm);cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all var(--tr)}
+.nav-item:hover{background:var(--hover);color:var(--text)}
+.nav-item.active{background:var(--gold-subtle);color:var(--gold-light)}
+.nav-icon{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.sidebar-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.discogs-pill{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);transition:background var(--tr)}
+.status-dot.on{background:var(--green);box-shadow:0 0 6px rgba(52,199,89,0.5)}
+.theme-btn{width:30px;height:30px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:all var(--tr)}
+.theme-btn:hover{background:var(--hover)}
+
+/* MAIN */
+.main{margin-left:220px;display:flex;flex-direction:column;min-height:100vh}
+.topbar{position:sticky;top:0;z-index:90;background:var(--topbar);backdrop-filter:var(--blur);border-bottom:1px solid var(--border);padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.page-title{font-size:17px;font-weight:600;letter-spacing:-0.3px}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.period-pill{display:flex;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:3px;gap:2px}
+.period-btn{padding:5px 11px;border-radius:16px;font-size:12px;font-weight:500;cursor:pointer;color:var(--text2);background:transparent;border:none;transition:all var(--tr);font-family:var(--font)}
+.period-btn.active{background:var(--surface-s);color:var(--text);box-shadow:var(--shadow-s)}
+.content{padding:24px;flex:1}
+.page{display:none}
+.page.active{display:block}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r-sm);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all var(--tr);font-family:var(--font);white-space:nowrap}
+.btn-primary{background:var(--gold);color:#fff}
+.btn-primary:hover{background:var(--gold-light);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--hover);color:var(--text)}
+.btn-danger{background:rgba(255,59,48,.1);color:var(--red);border:1px solid rgba(255,59,48,.2)}
+.btn-sm{padding:5px 11px;font-size:12px}
+.btn-icon{padding:7px;border-radius:50%}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);backdrop-filter:var(--blur);overflow:hidden;margin-bottom:16px}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+.card-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.8px}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 18px;backdrop-filter:var(--blur);transition:all var(--tr);position:relative;overflow:hidden}
+.kpi-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--kpi-color,var(--gold));opacity:.6}
+.kpi-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.kpi-label{font-size:10px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.kpi-value{font-size:26px;font-weight:700;letter-spacing:-1px;color:var(--kpi-color,var(--text));line-height:1;margin-bottom:4px}
+.kpi-sub{font-size:10px;color:var(--text3)}
+
+/* CHARTS */
+.charts-row{display:grid;gap:12px;margin-bottom:12px}
+.charts-2{grid-template-columns:3fr 2fr}
+.charts-equal{grid-template-columns:1fr 1fr}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px;backdrop-filter:var(--blur)}
+.chart-label{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px}
+
+/* TABLE */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{padding:9px 14px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;background:var(--surface2);border-bottom:1px solid var(--border);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);transition:background var(--tr)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--hover)}
+tbody td{padding:10px 14px;color:var(--text);vertical-align:middle}
+.td-m{color:var(--text2)}
+.td-g{color:var(--green);font-weight:600}
+.td-r{color:var(--red);font-weight:600}
+.td-gold{color:var(--gold-light);font-weight:600}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600}
+.badge-gold{background:rgba(184,134,11,.12);color:var(--gold-light)}
+.badge-gray{background:var(--surface2);color:var(--text2)}
+.badge-green{background:rgba(52,199,89,.12);color:var(--green)}
+
+/* FORMS */
+.form-group{margin-bottom:13px}
+.form-label{display:block;font-size:11px;font-weight:500;color:var(--text2);margin-bottom:5px}
+.form-input,.form-select,.form-textarea{width:100%;background:var(--input);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:var(--r-sm);font-size:13px;font-family:var(--font);transition:all var(--tr)}
+.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-subtle)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);z-index:500;display:none;align-items:center;justify-content:center;padding:24px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface-s);border:1px solid var(--border);border-radius:var(--r-xl);width:100%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow);animation:mIn .2s ease}
+@keyframes mIn{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 14px;border-bottom:1px solid var(--border)}
+.modal-title{font-size:16px;font-weight:600;letter-spacing:-.3px}
+.modal-close{width:26px;height:26px;border-radius:50%;background:var(--surface2);border:none;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all var(--tr)}
+.modal-close:hover{background:var(--hover);color:var(--text)}
+.modal-body{padding:18px 22px}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+
+/* ALBUM GRID */
+.album-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px}
+.album-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;cursor:pointer;transition:all var(--tr);backdrop-filter:var(--blur)}
+.album-card:hover{transform:translateY(-3px) scale(1.01);box-shadow:var(--shadow);border-color:var(--border-s)}
+.album-cover{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:var(--surface2)}
+.album-ph{width:100%;aspect-ratio:1;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:36px;color:var(--text3)}
+.album-info{padding:9px 11px 11px}
+.album-artist{font-size:10px;color:var(--text2);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.album-title{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:5px}
+.album-price{font-size:12px;font-weight:700;color:var(--gold-light)}
+.album-no-price{font-size:10px;color:var(--text3)}
+
+/* AUTOCOMPLETE */
+.ac-wrap{position:relative}
+.ac-list{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface-s);border:1px solid var(--border);border-radius:var(--r-md);max-height:220px;overflow-y:auto;z-index:999;display:none;box-shadow:var(--shadow)}
+.ac-item{display:flex;align-items:center;gap:10px;padding:8px 11px;cursor:pointer;transition:background var(--tr);border-bottom:1px solid var(--border)}
+.ac-item:last-child{border-bottom:none}
+.ac-item:hover{background:var(--hover)}
+.ac-thumb{width:34px;height:34px;border-radius:5px;object-fit:cover;flex-shrink:0;background:var(--surface2)}
+.ac-name{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ac-sub{font-size:10px;color:var(--text3);margin-top:1px}
+.ac-price{font-size:12px;font-weight:700;color:var(--gold-light);flex-shrink:0}
+.sel-album{display:none;background:var(--surface2);border:1px solid var(--gold);border-radius:var(--r-md);padding:11px;margin-bottom:13px;gap:11px;align-items:center}
+.sel-album.show{display:flex}
+.sel-thumb{width:42px;height:42px;border-radius:7px;object-fit:cover;flex-shrink:0;background:var(--surface3)}
+
+/* TABS */
+.tabs{display:flex;background:var(--surface2);border-radius:var(--r-md);padding:3px;gap:2px;margin-bottom:18px;width:fit-content}
+.tab{padding:5px 13px;border-radius:var(--r-sm);font-size:12px;font-weight:500;cursor:pointer;color:var(--text2);transition:all var(--tr);border:none;background:transparent;font-family:var(--font)}
+.tab.active{background:var(--surface-s);color:var(--text);box-shadow:var(--shadow-s)}
+
+/* SETTINGS */
+.settings-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:22px;margin-bottom:14px;backdrop-filter:var(--blur)}
+.settings-title{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+/* MISC */
+.empty{text-align:center;padding:40px 20px;color:var(--text3)}
+.empty-icon{font-size:40px;margin-bottom:10px;opacity:.4}
+.empty-title{font-size:14px;font-weight:600;color:var(--text2);margin-bottom:5px}
+.empty-sub{font-size:12px}
+.spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-row{display:flex;align-items:center;justify-content:center;gap:10px;padding:28px;color:var(--text2);font-size:13px}
+.pagination{display:flex;align-items:center;justify-content:center;gap:6px;padding:16px}
+.pag-btn{width:30px;height:30px;border-radius:var(--r-sm);border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;transition:all var(--tr);font-family:var(--font);display:flex;align-items:center;justify-content:center}
+.pag-btn:hover,.pag-btn.active{background:var(--gold-subtle);border-color:var(--gold);color:var(--gold-light)}
+.import-box{border:2px dashed var(--border);border-radius:var(--r-lg);padding:24px;text-align:center;cursor:pointer;transition:all var(--tr);display:block}
+.import-box:hover{border-color:var(--gold);background:var(--gold-subtle)}
+.import-box input{display:none}
+.search-wrap{position:relative}
+.search-input{width:100%;background:var(--input);border:1px solid var(--border);color:var(--text);padding:8px 13px 8px 34px;border-radius:var(--r-md);font-size:13px;font-family:var(--font);transition:all var(--tr)}
+.search-input:focus{outline:none;border-color:var(--gold)}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;pointer-events:none}
+.flex{display:flex}.flex-c{display:flex;align-items:center}.gap-8{gap:8px}.gap-12{gap:12px}.mb-16{margin-bottom:16px}.flex-1{flex:1}.mn-w{min-width:0}
+
+@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:900px){.sidebar{display:none}.main{margin-left:0}.kpi-grid{grid-template-columns:repeat(2,1fr)}.charts-2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <div class="avatar">M</div>
+    <div>
+      <div class="sidebar-name">Major9.nl</div>
+      <div class="sidebar-sub">Vinyl Dashboard</div>
+    </div>
+  </div>
+  <div class="nav-groups">
+    <div class="nav-group">
+      <div class="nav-group-label">Overzicht</div>
+      <div class="nav-item active" onclick="nav('dashboard')"><div class="nav-icon">◈</div>Dashboard</div>
+      <div class="nav-item" onclick="nav('collectie')"><div class="nav-icon">◉</div>Collectie</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Financieel</div>
+      <div class="nav-item" onclick="nav('transacties')"><div class="nav-icon">↕</div>Transacties</div>
+      <div class="nav-item" onclick="nav('analyse')"><div class="nav-icon">◎</div>Analyse</div>
+      <div class="nav-item" onclick="nav('inkoop')"><div class="nav-icon">⊕</div>Inkoop</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Beheer</div>
+      <div class="nav-item" onclick="nav('instellingen')"><div class="nav-icon">◧</div>Instellingen</div>
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="discogs-pill"><div class="status-dot" id="discogsDot"></div><span id="discogsLabel">Discogs</span></div>
+    <div class="theme-btn" onclick="toggleTheme()" id="themeBtn">☀</div>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <div class="page-title" id="pageTitle">Dashboard</div>
+    <div class="topbar-right">
+      <div class="period-pill">
+        <button class="period-btn" onclick="setPeriod('week',this)">Week</button>
+        <button class="period-btn active" onclick="setPeriod('month',this)">Maand</button>
+        <button class="period-btn" onclick="setPeriod('quarter',this)">Kwartaal</button>
+        <button class="period-btn" onclick="setPeriod('year',this)">Jaar</button>
+        <button class="period-btn" onclick="setPeriod('all',this)">Alles</button>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="openModal('bulkModal')">Bulk</button>
+      <button class="btn btn-primary btn-sm" onclick="openModal('transModal')">+ Transactie</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="kpi-grid">
+        <div class="kpi-card" style="--kpi-color:var(--green)"><div class="kpi-label">Omzet</div><div class="kpi-value" id="k-omzet">€0</div><div class="kpi-sub" id="k-omzet-sub">0 transacties</div></div>
+        <div class="kpi-card" style="--kpi-color:var(--red)"><div class="kpi-label">Inkoop</div><div class="kpi-value" id="k-inkoop">€0</div><div class="kpi-sub">totale kosten</div></div>
+        <div class="kpi-card" style="--kpi-color:var(--green)"><div class="kpi-label">Winst</div><div class="kpi-value" id="k-winst">€0</div><div class="kpi-sub" id="k-winst-sub">na inkoop</div></div>
+        <div class="kpi-card" style="--kpi-color:var(--gold-light)"><div class="kpi-label">Marge</div><div class="kpi-value" id="k-marge">0%</div><div class="kpi-sub">gemiddeld</div></div>
+        <div class="kpi-card" style="--kpi-color:var(--blue)"><div class="kpi-label">Voorraadwaarde</div><div class="kpi-value" id="k-voorraad">€0</div><div class="kpi-sub">verkoopprijs</div></div>
+      </div>
+      <div class="charts-row charts-2">
+        <div class="chart-card"><div class="chart-label">Omzet & Inkoop</div><canvas id="cOmzet" height="110"></canvas></div>
+        <div class="chart-card"><div class="chart-label">Marge %</div><canvas id="cMarge" height="110"></canvas></div>
+      </div>
+      <div class="charts-row charts-equal">
+        <div class="chart-card"><div class="chart-label">Winst per dag</div><canvas id="cWinst" height="100"></canvas></div>
+        <div class="chart-card"><div class="chart-label">Omzet per kanaal</div><canvas id="cKanaal" height="100"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Recente transacties</div><button class="btn btn-ghost btn-sm" onclick="nav('transacties')">Alle →</button></div>
+        <div class="table-wrap"><table><thead><tr><th>Datum</th><th>Album</th><th>Omzet</th><th>Inkoop</th><th>Winst</th><th>Kanaal</th></tr></thead><tbody id="recentTbody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- COLLECTIE -->
+    <div class="page" id="page-collectie">
+      <div class="flex-c gap-12 mb-16">
+        <div class="search-wrap flex-1"><span class="search-icon">⌕</span><input class="search-input" id="colSearch" placeholder="Zoek artiest of album…" oninput="renderCollectie()"></div>
+        <select class="form-select" style="width:150px" id="genreFilter" onchange="renderCollectie()"><option value="">Alle genres</option></select>
+        <label class="btn btn-ghost btn-sm" style="cursor:pointer">📥 Prijzen CSV<input type="file" accept=".csv" style="display:none" onchange="importShopifyCSV(event)"></label>
+        <button class="btn btn-primary btn-sm" onclick="syncDiscogs()">↻ Sync Discogs</button>
+      </div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="kpi-card"><div class="kpi-label">Albums</div><div class="kpi-value" id="col-total" style="font-size:22px">0</div></div>
+        <div class="kpi-card" style="--kpi-color:var(--green)"><div class="kpi-label">Met prijs</div><div class="kpi-value" id="col-priced" style="font-size:22px;color:var(--green)">0</div></div>
+        <div class="kpi-card" style="--kpi-color:var(--red)"><div class="kpi-label">Zonder prijs</div><div class="kpi-value" id="col-unpriced" style="font-size:22px;color:var(--red)">0</div></div>
+        <div class="kpi-card" style="--kpi-color:var(--gold-light)"><div class="kpi-label">Totale waarde</div><div class="kpi-value" id="col-value" style="font-size:22px;color:var(--gold-light)">€0</div></div>
+      </div>
+      <div id="colGrid" class="album-grid mb-16"><div class="empty" style="grid-column:1/-1"><div class="empty-icon">🎵</div><div class="empty-title">Nog geen collectie</div><div class="empty-sub">Sync met Discogs via de knop hierboven</div></div></div>
+      <div class="pagination" id="colPag"></div>
+    </div>
+
+    <!-- TRANSACTIES -->
+    <div class="page" id="page-transacties">
+      <div class="flex-c gap-12 mb-16">
+        <div class="search-wrap flex-1"><span class="search-icon">⌕</span><input class="search-input" id="transSearch" placeholder="Zoek transacties…" oninput="renderTrans()"></div>
+        <select class="form-select" style="width:130px" id="transKanaal" onchange="renderTrans()"><option value="">Alle kanalen</option><option>Vinted</option><option>major9.nl</option><option>Discogs</option><option>Anders</option></select>
+        <label class="btn btn-ghost btn-sm" style="cursor:pointer">📥 CSV<input type="file" accept=".csv" style="display:none" onchange="importCSV(event)"></label>
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV()">↓ Export</button>
+        <button class="btn btn-primary btn-sm" onclick="openModal('transModal')">+ Toevoegen</button>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title" id="transCount">Transacties</div></div>
+        <div class="table-wrap"><table><thead><tr><th>Datum</th><th>Album</th><th>Omzet</th><th>Inkoop</th><th>Winst</th><th>Marge</th><th>Kanaal</th><th></th></tr></thead><tbody id="transTbody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ANALYSE -->
+    <div class="page" id="page-analyse">
+      <div class="charts-row charts-equal">
+        <div class="chart-card"><div class="chart-label">Omzet per maand</div><canvas id="cMaand" height="140"></canvas></div>
+        <div class="chart-card"><div class="chart-label">Winst per kanaal</div><canvas id="cKanaalW" height="140"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Samenvatting per maand</div></div>
+        <div class="table-wrap"><table><thead><tr><th>Maand</th><th>Omzet</th><th>Inkoop</th><th>Winst</th><th>Marge</th><th>Transacties</th><th>Gem./transactie</th></tr></thead><tbody id="analyseTbody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- INKOOP -->
+    <div class="page" id="page-inkoop">
+      <div class="flex-c gap-12 mb-16">
+        <div style="font-size:12px;color:var(--text2);flex:1">Upload Bertus ShipmentExport CSV's om inkoop automatisch te verwerken.</div>
+        <label class="btn btn-ghost btn-sm" style="cursor:pointer">📥 CSV uploaden<input type="file" accept=".csv" multiple style="display:none" onchange="importInkoopCSV(event)"></label>
+        <button class="btn btn-primary btn-sm" onclick="openModal('inkoopModal')">+ Handmatig</button>
+      </div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="kpi-card" style="--kpi-color:var(--red)"><div class="kpi-label">Totale inkoop</div><div class="kpi-value" id="ik-totaal" style="font-size:22px;color:var(--red)">€0</div></div>
+        <div class="kpi-card"><div class="kpi-label">Orders</div><div class="kpi-value" id="ik-orders" style="font-size:22px">0</div></div>
+        <div class="kpi-card"><div class="kpi-label">Stuks</div><div class="kpi-value" id="ik-stuks" style="font-size:22px">0</div></div>
+        <div class="kpi-card" style="--kpi-color:var(--gold-light)"><div class="kpi-label">Gem. per stuk</div><div class="kpi-value" id="ik-gem" style="font-size:22px;color:var(--gold-light)">€0</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Inkoop overzicht</div></div>
+        <div class="table-wrap"><table><thead><tr><th>Datum</th><th>Leverancier</th><th>Omschrijving</th><th>Bedrag</th><th>Stuks</th><th>Gem./stuk</th><th></th></tr></thead><tbody id="inkoopTbody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- INSTELLINGEN -->
+    <div class="page" id="page-instellingen">
+      <div class="settings-card">
+        <div class="settings-title">🎵 Discogs Verbinding</div>
+        <div class="form-row mb-16">
+          <div class="form-group" style="margin:0"><label class="form-label">API Token</label><input type="password" class="form-input" id="sToken" placeholder="Jouw Discogs token"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">Gebruikersnaam</label><input type="text" class="form-input" id="sUsername" placeholder="bijv. Major9.nl"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Folder ID (optioneel)</label><input type="text" class="form-input" id="sFolderId" placeholder="bijv. 9388946" style="max-width:220px"></div>
+        <div class="flex-c gap-8"><button class="btn btn-primary" onclick="saveDiscogs()">Testen & opslaan</button><span id="discogsMsg" style="font-size:12px"></span></div>
+      </div>
+      <div class="settings-card">
+        <div class="settings-title">📦 Bertus Prijslijst</div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:14px">Upload ShipmentExport CSV's van het Bertus portaal. Barcodes worden automatisch gekoppeld.</p>
+        <label class="import-box"><input type="file" accept=".csv" multiple onchange="importBertus(event)"><div style="font-size:28px;margin-bottom:8px">📦</div><div style="font-size:13px;font-weight:500;margin-bottom:3px">ShipmentExport CSV's uploaden</div><div style="font-size:11px;color:var(--text3)">Meerdere bestanden tegelijk</div></label>
+        <div id="bertusMsg" style="margin-top:10px;font-size:12px;color:var(--text2)"></div>
+      </div>
+      <div class="settings-card">
+        <div class="settings-title">⚖️ Prijsfactoren</div>
+        <div class="form-row-3 mb-16">
+          <div class="form-group" style="margin:0"><label class="form-label">Bertus &lt; €19,50</label><input type="number" class="form-input" id="fLaag" value="1.5" step="0.1"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">Bertus ≥ €19,50</label><input type="number" class="form-input" id="fHoog" value="1.7" step="0.1"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">Japan (yen)</label><input type="number" class="form-input" id="fJapan" value="2.5" step="0.1"></div>
+        </div>
+        <div class="form-group" style="max-width:200px;margin-bottom:14px"><label class="form-label">JPY/EUR wisselkoers</label><input type="number" class="form-input" id="fJPY" value="160"></div>
+        <button class="btn btn-primary" onclick="saveFactors()">Opslaan</button>
+      </div>
+      <div class="settings-card">
+        <div class="settings-title">💾 Data</div>
+        <div class="flex-c gap-8">
+          <button class="btn btn-ghost" onclick="exportData()">↓ Backup JSON</button>
+          <label class="btn btn-ghost" style="cursor:pointer">↑ Importeren<input type="file" accept=".json" style="display:none" onchange="importData(event)"></label>
+          <button class="btn btn-danger" onclick="clearData()">Alles wissen</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="transModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Transactie toevoegen</div><button class="modal-close" onclick="closeModal('transModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group ac-wrap">
+        <label class="form-label">Album zoeken in collectie</label>
+        <input type="text" class="form-input" id="tSearch" placeholder="Typ artiest of albumtitel…" oninput="albumSearch()" autocomplete="off">
+        <div class="ac-list" id="tSuggest"></div>
+      </div>
+      <div class="sel-album" id="tSelected">
+        <img class="sel-thumb" id="tThumb" src="" alt="">
+        <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600" id="tSelName"></div><div style="font-size:11px;color:var(--text2);margin-top:2px" id="tSelLabel"></div></div>
+        <div style="text-align:right;flex-shrink:0"><div style="font-size:11px;color:var(--text2)" id="tSelAdvies"></div><div style="font-size:13px;font-weight:700;color:var(--gold-light)" id="tSelPrice"></div></div>
+        <button onclick="resetAlbum()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:15px;padding:3px">✕</button>
+      </div>
+      <input type="hidden" id="tAlbum">
+      <div class="form-row" style="margin-bottom:11px">
+        <div class="form-group" style="margin:0"><label class="form-label">Datum</label><input type="date" class="form-input" id="tDatum"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Kanaal</label><select class="form-select" id="tKanaal"><option>Vinted</option><option>major9.nl</option><option>Discogs</option><option>Anders</option></select></div>
+      </div>
+      <div class="form-row" style="margin-bottom:11px">
+        <div class="form-group" style="margin:0"><label class="form-label">Verkoopprijs (€)</label><input type="number" class="form-input" id="tVerkoop" step="0.01" placeholder="0.00"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Inkoopprijs (€)</label><input type="number" class="form-input" id="tInkoop" step="0.01" placeholder="0.00"></div>
+      </div>
+      <div class="form-group" style="margin-bottom:0"><label class="form-label">Notities</label><textarea class="form-textarea" id="tNotes" rows="2" placeholder="Optioneel…"></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('transModal')">Annuleren</button><button class="btn btn-primary" onclick="saveTrans()">Opslaan</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="bulkModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Bulk invoer</div><button class="modal-close" onclick="closeModal('bulkModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="tabs" id="bulkTabs">
+        <button class="tab active" onclick="setBulkTab('dag',this)">Per dag</button>
+        <button class="tab" onclick="setBulkTab('week',this)">Per week</button>
+        <button class="tab" onclick="setBulkTab('maand',this)">Per maand</button>
+        <button class="tab" onclick="setBulkTab('kwartaal',this)">Per kwartaal</button>
+      </div>
+      <div class="form-row" style="margin-bottom:11px">
+        <div class="form-group" style="margin:0"><label class="form-label" id="bDateLabel">Datum</label><input type="date" class="form-input" id="bDatum"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Kanaal</label><select class="form-select" id="bKanaal"><option>Vinted</option><option>major9.nl</option><option>Discogs</option><option>Anders</option></select></div>
+      </div>
+      <div class="form-row" style="margin-bottom:11px">
+        <div class="form-group" style="margin:0"><label class="form-label">Totale omzet (€)</label><input type="number" class="form-input" id="bOmzet" step="0.01" placeholder="0.00"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Totale inkoop (€)</label><input type="number" class="form-input" id="bInkoop" step="0.01" placeholder="0.00"></div>
+      </div>
+      <div class="form-group" style="margin-bottom:0"><label class="form-label">Omschrijving</label><input type="text" class="form-input" id="bDesc" placeholder="bijv. Dagomzet Vinted"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('bulkModal')">Annuleren</button><button class="btn btn-primary" onclick="saveBulk()">Opslaan</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="inkoopModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Inkoop toevoegen</div><button class="modal-close" onclick="closeModal('inkoopModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row" style="margin-bottom:11px">
+        <div class="form-group" style="margin:0"><label class="form-label">Datum</label><input type="date" class="form-input" id="iDatum"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Leverancier</label><select class="form-select" id="iLev"><option>Bertus</option><option>Discogs Marketplace</option><option>Japan</option><option>Anders</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">Omschrijving</label><input type="text" class="form-input" id="iDesc" placeholder="bijv. Order #335406"></div>
+      <div class="form-row" style="margin-bottom:0">
+        <div class="form-group" style="margin:0"><label class="form-label">Bedrag (€)</label><input type="number" class="form-input" id="iBedrag" step="0.01" placeholder="0.00"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Stuks</label><input type="number" class="form-input" id="iStuks" placeholder="0"></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('inkoopModal')">Annuleren</button><button class="btn btn-primary" onclick="saveInkoop()">Opslaan</button></div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────
+let S = {
+  transacties:[], inkopen:[], collectie:[], bertusEANs:{}, shopifyPrijzen:null,
+  settings:{ discogsToken:'', discogsUsername:'', discogsFolderId:'', fLaag:1.5, fHoog:1.7, fJapan:2.5, fJPY:160 },
+  period:'all', bulkTab:'dag', colPage:1, charts:{}
+};
+
+// ── STORAGE ──────────────────────────
+function save() {
+  try { localStorage.setItem('m9', JSON.stringify({ transacties:S.transacties, inkopen:S.inkopen, collectie:S.collectie, bertusEANs:S.bertusEANs, shopifyPrijzen:S.shopifyPrijzen, settings:S.settings })); } catch(e) {}
+}
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem('m9')||'{}');
+    if (d.transacties) S.transacties = d.transacties;
+    if (d.inkopen) S.inkopen = d.inkopen;
+    if (d.collectie) S.collectie = d.collectie;
+    if (d.bertusEANs) S.bertusEANs = d.bertusEANs;
+    if (d.shopifyPrijzen) S.shopifyPrijzen = d.shopifyPrijzen;
+    if (d.settings) S.settings = {...S.settings,...d.settings};
+  } catch(e) {}
+}
+
+// ── THEME ──────────────────────────────
+function toggleTheme() {
+  const h = document.documentElement;
+  const dark = h.getAttribute('data-theme')==='dark';
+  h.setAttribute('data-theme', dark?'light':'dark');
+  document.getElementById('themeBtn').textContent = dark?'☽':'☀';
+  try { localStorage.setItem('m9theme', dark?'light':'dark'); } catch(e) {}
+}
+
+// ── NAV ──────────────────────────────
+const TITLES = { dashboard:'Dashboard', collectie:'Collectie & Voorraad', transacties:'Transacties', analyse:'Analyse', inkoop:'Inkoop', instellingen:'Instellingen' };
+function nav(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.getElementById('pageTitle').textContent = TITLES[page]||page;
+  document.querySelectorAll('.nav-item').forEach(n => { if(n.getAttribute('onclick')?.includes("'"+page+"'")) n.classList.add('active'); });
+  if(page==='dashboard') renderDashboard();
+  if(page==='transacties') renderTrans();
+  if(page==='analyse') renderAnalyse();
+  if(page==='inkoop') renderInkoop();
+  if(page==='collectie') renderCollectie();
+  if(page==='instellingen') loadSettingsForm();
+}
+
+// ── MODALS ──────────────────────────
+function openModal(id) {
+  const today = new Date().toISOString().split('T')[0];
+  document.querySelectorAll('#'+id+' input[type=date]').forEach(el => { if(!el.value) el.value=today; });
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el => el.addEventListener('click', e => { if(e.target===el) el.classList.remove('open'); }));
+
+// ── PERIOD ──────────────────────────
+function setPeriod(p, btn) {
+  S.period = p;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderDashboard();
+}
+function filterPeriod(items, f='datum') {
+  const now = new Date();
+  return items.filter(item => {
+    const d = new Date(item[f]);
+    if(isNaN(d)||S.period==='all') return true;
+    if(S.period==='week') { const w=new Date(now); w.setDate(now.getDate()-7); return d>=w; }
+    if(S.period==='month') return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+    if(S.period==='quarter') return Math.floor(d.getMonth()/3)===Math.floor(now.getMonth()/3)&&d.getFullYear()===now.getFullYear();
+    if(S.period==='year') return d.getFullYear()===now.getFullYear();
+    return true;
+  });
+}
+
+// ── HELPERS ──────────────────────────
+const eur = n => isNaN(n)?'€0':'€'+Math.abs(parseFloat(n)).toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2});
+const pct = n => isNaN(n)?'0%':(parseFloat(n)*100).toFixed(1)+'%';
+const fmtDate = s => { try { return new Date(s).toLocaleDateString('nl-NL',{day:'2-digit',month:'2-digit',year:'2-digit'}); } catch(e) { return s||'—'; } };
+function markup(inkoop, factor) {
+  const v=inkoop*factor, c=Math.ceil(v);
+  let p=c-0.01; if(p<v) p=c+0.99;
+  return Math.round(p*100)/100;
+}
+const isDark = () => document.documentElement.getAttribute('data-theme')==='dark';
+const CD = () => ({
+  responsive:true, animation:{duration:300},
+  plugins:{legend:{labels:{color:isDark()?'rgba(255,255,255,0.5)':'rgba(0,0,0,0.5)',font:{size:11,family:'Inter'}}}},
+  scales:{
+    x:{ticks:{color:isDark()?'rgba(255,255,255,0.35)':'rgba(0,0,0,0.35)',font:{size:10}},grid:{color:isDark()?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.05)'}},
+    y:{ticks:{color:isDark()?'rgba(255,255,255,0.35)':'rgba(0,0,0,0.35)',font:{size:10}},grid:{color:isDark()?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.05)'}}
+  }
+});
+
+// ── DASHBOARD ────────────────────────
+function renderDashboard() {
+  const items = filterPeriod(S.transacties);
+  const omzet = items.reduce((s,t)=>s+(t.verkoop||0),0);
+  const inkoop = items.reduce((s,t)=>s+(t.inkoop||0),0);
+  const winst = omzet-inkoop;
+  const marge = omzet>0?winst/omzet:0;
+  const voorraad = S.collectie.reduce((s,a)=>s+(parseFloat(a.prijs)||0),0);
+  document.getElementById('k-omzet').textContent = eur(omzet);
+  document.getElementById('k-inkoop').textContent = eur(inkoop);
+  document.getElementById('k-winst').textContent = eur(winst);
+  document.getElementById('k-marge').textContent = pct(marge);
+  document.getElementById('k-voorraad').textContent = eur(voorraad);
+  document.getElementById('k-omzet-sub').textContent = items.length+' transacties';
+  document.getElementById('k-winst-sub').textContent = pct(marge)+' marge';
+  renderRecentTrans(items);
+  renderCharts(items);
+}
+
+function renderRecentTrans(items) {
+  const recent = [...items].sort((a,b)=>new Date(b.datum)-new Date(a.datum)).slice(0,8);
+  const tb = document.getElementById('recentTbody');
+  if(!recent.length) { tb.innerHTML='<tr><td colspan="6"><div class="empty"><div class="empty-icon">🎵</div><div class="empty-title">Geen transacties</div></div></td></tr>'; return; }
+  tb.innerHTML = recent.map(t=>`<tr><td class="td-m">${fmtDate(t.datum)}</td><td>${t.album}</td><td class="td-g">${eur(t.verkoop)}</td><td class="td-m">${eur(t.inkoop)}</td><td class="${t.winst>=0?'td-g':'td-r'}">${eur(t.winst)}</td><td><span class="badge badge-gray">${t.kanaal||'—'}</span></td></tr>`).join('');
+}
+
+function renderCharts(items) {
+  const byDate={};
+  items.forEach(t=>{ const d=(t.datum||'').substring(0,10); if(!d)return; if(!byDate[d])byDate[d]={v:0,i:0}; byDate[d].v+=t.verkoop||0; byDate[d].i+=t.inkoop||0; });
+  const dates=Object.keys(byDate).sort();
+  const labels=dates.map(d=>{ const p=d.split('-'); return p.length>=3?`${p[2]}/${p[1]}`:d; });
+  const vd=dates.map(d=>byDate[d].v), id=dates.map(d=>byDate[d].i);
+  const wd=dates.map(d=>byDate[d].v-byDate[d].i), md=dates.map(d=>byDate[d].v>0?((byDate[d].v-byDate[d].i)/byDate[d].v*100):0);
+  const cd=CD(), gold='#B8860B', green='#34C759', red='#FF3B30';
+
+  if(S.charts.omzet){S.charts.omzet.data.labels=labels;S.charts.omzet.data.datasets[0].data=vd;S.charts.omzet.data.datasets[1].data=id;S.charts.omzet.update('active');}
+  else S.charts.omzet=new Chart(document.getElementById('cOmzet'),{type:'bar',data:{labels,datasets:[{label:'Omzet',data:vd,backgroundColor:'rgba(184,134,11,0.75)',borderRadius:3},{label:'Inkoop',data:id,backgroundColor:'rgba(255,59,48,0.5)',borderRadius:3}]},options:cd});
+
+  if(S.charts.marge){S.charts.marge.data.labels=labels;S.charts.marge.data.datasets[0].data=md;S.charts.marge.update('active');}
+  else S.charts.marge=new Chart(document.getElementById('cMarge'),{type:'line',data:{labels,datasets:[{label:'Marge %',data:md,borderColor:gold,backgroundColor:'rgba(184,134,11,0.08)',fill:true,tension:0.4,pointRadius:3}]},options:cd});
+
+  if(S.charts.winst){S.charts.winst.data.labels=labels;S.charts.winst.data.datasets[0].data=wd;S.charts.winst.update('active');}
+  else S.charts.winst=new Chart(document.getElementById('cWinst'),{type:'line',data:{labels,datasets:[{label:'Winst',data:wd,borderColor:green,backgroundColor:'rgba(52,199,89,0.08)',fill:true,tension:0.4,pointRadius:3}]},options:cd});
+
+  const kt={};items.forEach(t=>{const k=t.kanaal||'Onbekend';kt[k]=(kt[k]||0)+(t.verkoop||0);});
+  if(S.charts.kanaal){S.charts.kanaal.data.labels=Object.keys(kt);S.charts.kanaal.data.datasets[0].data=Object.values(kt);S.charts.kanaal.update('active');}
+  else S.charts.kanaal=new Chart(document.getElementById('cKanaal'),{type:'doughnut',data:{labels:Object.keys(kt),datasets:[{data:Object.values(kt),backgroundColor:[gold,green,'#007AFF',red,'#888'],borderWidth:0}]},options:{responsive:true,animation:{duration:300},plugins:{legend:{position:'bottom',labels:{color:isDark()?'rgba(255,255,255,0.5)':'rgba(0,0,0,0.5)',font:{size:11},padding:10}}}}});
+}
+
+// ── TRANSACTIES ──────────────────────
+function renderTrans() {
+  const search=(document.getElementById('transSearch')?.value||'').toLowerCase();
+  const kanaal=document.getElementById('transKanaal')?.value||'';
+  let items=filterPeriod(S.transacties);
+  if(search) items=items.filter(t=>t.album.toLowerCase().includes(search)||(t.kanaal||'').toLowerCase().includes(search));
+  if(kanaal) items=items.filter(t=>t.kanaal===kanaal);
+  items=[...items].sort((a,b)=>new Date(b.datum)-new Date(a.datum));
+  document.getElementById('transCount').textContent=items.length+' transacties';
+  const tb=document.getElementById('transTbody');
+  if(!items.length){tb.innerHTML='<tr><td colspan="8"><div class="empty"><div class="empty-icon">🎵</div><div class="empty-title">Geen transacties</div></div></td></tr>';return;}
+  tb.innerHTML=items.map(t=>{const m=t.verkoop>0?t.winst/t.verkoop:0;return`<tr><td class="td-m">${fmtDate(t.datum)}</td><td>${t.album}</td><td class="td-g">${eur(t.verkoop)}</td><td class="td-m">${eur(t.inkoop)}</td><td class="${t.winst>=0?'td-g':'td-r'}">${eur(t.winst)}</td><td class="td-gold">${pct(m)}</td><td><span class="badge badge-gray">${t.kanaal||'—'}</span></td><td><button onclick="delTrans(${t.id})" class="btn btn-ghost btn-sm btn-icon">✕</button></td></tr>`;}).join('');
+}
+
+function saveTrans() {
+  const album=document.getElementById('tAlbum').value||document.getElementById('tSearch').value;
+  const datum=document.getElementById('tDatum').value;
+  const kanaal=document.getElementById('tKanaal').value;
+  const verkoop=parseFloat(document.getElementById('tVerkoop').value)||0;
+  const inkoop=parseFloat(document.getElementById('tInkoop').value)||0;
+  if(!album||!datum||!verkoop){alert('Vul album, datum en verkoopprijs in.');return;}
+  S.transacties.push({id:Date.now(),album,datum,kanaal,verkoop,inkoop,winst:verkoop-inkoop,notes:document.getElementById('tNotes').value});
+  save(); closeModal('transModal'); resetTransForm(); renderDashboard(); renderTrans();
+}
+
+function resetTransForm() {
+  ['tSearch','tAlbum','tNotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['tVerkoop','tInkoop'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('tSelected').classList.remove('show');
+  document.getElementById('tSuggest').style.display='none';
+}
+
+function delTrans(id) {
+  if(!confirm('Verwijderen?'))return;
+  S.transacties=S.transacties.filter(t=>t.id!==id);
+  save(); renderTrans(); renderDashboard();
+}
+
+// ── BULK ─────────────────────────────
+let bulkTab='dag';
+function setBulkTab(tab,el){bulkTab=tab;document.querySelectorAll('#bulkTabs .tab').forEach(b=>b.classList.remove('active'));el.classList.add('active');const labels={dag:'Datum',week:'Week (begindatum)',maand:'Maand',kwartaal:'Kwartaal (begindatum)'};document.getElementById('bDateLabel').textContent=labels[tab];}
+function saveBulk() {
+  const datum=document.getElementById('bDatum').value;
+  const kanaal=document.getElementById('bKanaal').value;
+  const omzet=parseFloat(document.getElementById('bOmzet').value)||0;
+  const inkoop=parseFloat(document.getElementById('bInkoop').value)||0;
+  const desc=document.getElementById('bDesc').value||'Bulk '+bulkTab;
+  if(!datum||!omzet){alert('Vul datum en omzet in.');return;}
+  S.transacties.push({id:Date.now(),album:desc,datum,kanaal,verkoop:omzet,inkoop,winst:omzet-inkoop,type:bulkTab});
+  save(); closeModal('bulkModal');
+  document.getElementById('bOmzet').value=''; document.getElementById('bInkoop').value=''; document.getElementById('bDesc').value='';
+  renderDashboard(); renderTrans();
+}
+
+// ── INKOOP ───────────────────────────
+function saveInkoop() {
+  const datum=document.getElementById('iDatum').value, lev=document.getElementById('iLev').value;
+  const desc=document.getElementById('iDesc').value, bedrag=parseFloat(document.getElementById('iBedrag').value)||0;
+  const stuks=parseInt(document.getElementById('iStuks').value)||0;
+  if(!datum||!bedrag){alert('Vul datum en bedrag in.');return;}
+  S.inkopen.push({id:Date.now(),datum,lev,desc,bedrag,stuks});
+  save(); closeModal('inkoopModal'); renderInkoop();
+}
+
+function renderInkoop() {
+  const items=[...S.inkopen].sort((a,b)=>new Date(b.datum)-new Date(a.datum));
+  const totaal=items.reduce((s,i)=>s+i.bedrag,0), stuks=items.reduce((s,i)=>s+(i.stuks||0),0);
+  document.getElementById('ik-totaal').textContent=eur(totaal);
+  document.getElementById('ik-orders').textContent=items.length;
+  document.getElementById('ik-stuks').textContent=stuks;
+  document.getElementById('ik-gem').textContent=stuks>0?eur(totaal/stuks):'—';
+  const tb=document.getElementById('inkoopTbody');
+  if(!items.length){tb.innerHTML='<tr><td colspan="7"><div class="empty"><div class="empty-icon">📦</div><div class="empty-title">Nog geen inkopen</div><div class="empty-sub">Upload een Bertus CSV of voeg handmatig toe</div></div></td></tr>';return;}
+  tb.innerHTML=items.map(i=>`<tr><td class="td-m">${fmtDate(i.datum)}</td><td><span class="badge badge-gold">${i.lev}</span></td><td>${i.desc||'—'}</td><td class="td-r">${eur(i.bedrag)}</td><td class="td-m">${i.stuks||'—'}</td><td class="td-m">${i.stuks?eur(i.bedrag/i.stuks):'—'}</td><td><button onclick="delInkoop(${i.id})" class="btn btn-ghost btn-sm btn-icon">✕</button></td></tr>`).join('');
+}
+
+function delInkoop(id){if(!confirm('Verwijderen?'))return;S.inkopen=S.inkopen.filter(i=>i.id!==id);save();renderInkoop();}
+
+function importInkoopCSV(event) {
+  const files=Array.from(event.target.files);if(!files.length)return;
+  let imported=0,done=0;
+  files.forEach(file=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      const lines=e.target.result.split('\n').filter(l=>l.trim());if(!lines.length){done++;check();return;}
+      const sep=lines[0].includes(';')?';':',';
+      const hdrs=lines[0].split(sep).map(h=>h.trim().toLowerCase().replace(/['"]/g,''));
+      const priceIdx=hdrs.findIndex(h=>h==='itemprice'||h==='itemtotalprice');
+      const qtyIdx=hdrs.findIndex(h=>h==='units'||h==='quantityshipped');
+      const dateIdx=hdrs.findIndex(h=>h==='shippedat'||h==='datum');
+      const byDate={};
+      if(priceIdx>=0){
+        for(let i=1;i<lines.length;i++){
+          const vals=lines[i].split(sep).map(v=>v.trim().replace(/['"]/g,''));
+          const bedrag=parseFloat((vals[priceIdx]||'').replace(',','.'))||0;
+          const qty=parseInt(vals[qtyIdx]||'1')||1;
+          let d=(vals[dateIdx]||'').split(' ')[0]||new Date().toISOString().split('T')[0];
+          if(d.includes('-')){const p=d.split('-');if(p[0].length<=2)d=`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;}
+          if(!bedrag)continue;
+          if(!byDate[d])byDate[d]={bedrag:0,stuks:0};
+          byDate[d].bedrag+=bedrag;byDate[d].stuks+=qty;
+        }
+        Object.entries(byDate).forEach(([datum,data])=>{if(data.bedrag>0){S.inkopen.push({id:Date.now()+imported,datum,lev:'Bertus',desc:'Import: '+file.name,bedrag:Math.round(data.bedrag*100)/100,stuks:data.stuks});imported++;}});
+      }
+      done++;check();
+    };r.readAsText(file);
+  });
+  function check(){if(done<files.length)return;save();renderInkoop();alert('✓ '+imported+' inkoopregels verwerkt');event.target.value='';}
+}
+
+// ── ANALYSE ──────────────────────────
+function renderAnalyse() {
+  const byMaand={};
+  S.transacties.forEach(t=>{if(!t.datum)return;const d=new Date(t.datum);const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;if(!byMaand[k])byMaand[k]={v:0,i:0,n:0};byMaand[k].v+=t.verkoop||0;byMaand[k].i+=t.inkoop||0;byMaand[k].n++;});
+  const maanden=Object.keys(byMaand).sort();const cd=CD();
+  if(S.charts.maand){S.charts.maand.data.labels=maanden;S.charts.maand.data.datasets[0].data=maanden.map(m=>byMaand[m].v);S.charts.maand.data.datasets[1].data=maanden.map(m=>byMaand[m].v-byMaand[m].i);S.charts.maand.update('active');}
+  else S.charts.maand=new Chart(document.getElementById('cMaand'),{type:'bar',data:{labels:maanden,datasets:[{label:'Omzet',data:maanden.map(m=>byMaand[m].v),backgroundColor:'rgba(184,134,11,0.75)',borderRadius:3},{label:'Winst',data:maanden.map(m=>byMaand[m].v-byMaand[m].i),backgroundColor:'rgba(52,199,89,0.6)',borderRadius:3}]},options:cd});
+  const kw={};S.transacties.forEach(t=>{const k=t.kanaal||'Onbekend';kw[k]=(kw[k]||0)+((t.verkoop||0)-(t.inkoop||0));});
+  if(S.charts.kanaalW){S.charts.kanaalW.data.labels=Object.keys(kw);S.charts.kanaalW.data.datasets[0].data=Object.values(kw);S.charts.kanaalW.update('active');}
+  else S.charts.kanaalW=new Chart(document.getElementById('cKanaalW'),{type:'bar',data:{labels:Object.keys(kw),datasets:[{label:'Winst',data:Object.values(kw),backgroundColor:'#34C759',borderRadius:3}]},options:{...cd,plugins:{legend:{display:false}}}});
+  const tb=document.getElementById('analyseTbody');
+  if(!maanden.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--text3)">Geen data</td></tr>';return;}
+  tb.innerHTML=[...maanden].reverse().map(m=>{const d=byMaand[m],w=d.v-d.i,mg=d.v>0?w/d.v:0,gem=d.n>0?d.v/d.n:0;const[y,mo]=m.split('-');const naam=new Date(y,mo-1).toLocaleDateString('nl-NL',{month:'long',year:'numeric'});return`<tr><td>${naam}</td><td class="td-g">${eur(d.v)}</td><td class="td-m">${eur(d.i)}</td><td class="td-g">${eur(w)}</td><td class="td-gold">${pct(mg)}</td><td class="td-m">${d.n}</td><td class="td-m">${eur(gem)}</td></tr>`;}).join('');
+}
+
+// ── COLLECTIE ────────────────────────
+function parseNotitie(n, s) {
+  if(!n)return null;
+  const txt=Array.isArray(n)?n.map(x=>x.value||x).join(' '):String(n);
+  const mY=txt.match(/(\d+(?:[.,]\d+)?)\s*yen/i);
+  const mE=txt.match(/€\s*(\d+(?:[.,]\d+)?)|(\d+(?:[.,]\d+)?)\s*(?:euro|eur)\b/i);
+  const mU=txt.match(/\$\s*(\d+(?:[.,]\d+)?)|(\d+(?:[.,]\d+)?)\s*(?:dollar|usd)\b/i);
+  if(mY){const yen=parseFloat(mY[1].replace(',','.'));const ink=Math.round(yen/(s.fJPY||160)*100)/100;return{inkoop:ink,factor:s.fJapan||2.5};}
+  if(mE){const ink=parseFloat((mE[1]||mE[2]).replace(',','.'));return{inkoop:ink,factor:ink>=19.5?(s.fHoog||1.7):(s.fLaag||1.5)};}
+  if(mU){const usd=parseFloat((mU[1]||mU[2]).replace(',','.'));const ink=Math.round(usd/1.08*100)/100;return{inkoop:ink,factor:ink>=19.5?(s.fHoog||1.7):(s.fLaag||1.5)};}
+  return null;
+}
+
+async function syncDiscogs() {
+  const {discogsToken:tok,discogsUsername:user,discogsFolderId:fid}=S.settings;
+  if(!tok||!user){alert('Voer eerst je Discogs token en gebruikersnaam in bij Instellingen.');nav('instellingen');return;}
+  const grid=document.getElementById('colGrid');
+  grid.innerHTML='<div class="loading-row"><div class="spinner"></div> Collectie ophalen…</div>';
+  try {
+    let items=[],page=1,total=1;
+    while(page<=total){
+      const url=`https://api.discogs.com/users/${user}/collection/folders/${fid||'0'}/releases?page=${page}&per_page=100&token=${tok}`;
+      const r=await fetch(url);if(!r.ok)throw new Error('API fout '+r.status);
+      const data=await r.json();total=data.pagination.pages;items=items.concat(data.releases);
+      grid.innerHTML=`<div class="loading-row"><div class="spinner"></div> ${items.length} van ${data.pagination.items} albums…</div>`;
+      page++;if(page<=total)await new Promise(r=>setTimeout(r,500));
+    }
+    let notesMatched=0;
+    S.collectie=items.map(item=>{
+      const info=item.basic_information;
+      const artist=(info.artists||[]).map(a=>a.name.replace(/\s*\(\d+\)$/,'')).join(', ');
+      const col={id:item.id,releaseId:info.id,title:info.title,artist,label:(info.labels||[{}])[0]?.name||'',year:info.year||'',cover:info.cover_image||info.thumb||'',genres:info.genres||[],styles:info.styles||[],prijs:'',inkoop:''};
+      if(item.notes){const p=parseNotitie(item.notes,S.settings);if(p){col.inkoop=p.inkoop;col.prijs=markup(p.inkoop,p.factor);notesMatched++;}}
+      return col;
+    });
+
+    // Apply stored Shopify prices
+    if (S.shopifyPrijzen) {
+      const {prijsMap, barcodeMap} = S.shopifyPrijzen;
+      let shopifyMatched = 0;
+      S.collectie.forEach(a => {
+        if (a.prijs) return; // already has price from notes
+        if (a.ean && barcodeMap[a.ean]) { a.prijs = barcodeMap[a.ean]; shopifyMatched++; return; }
+        const key = normTitle(`${a.artist} - ${a.title}`);
+        if (prijsMap[key]) { a.prijs = prijsMap[key]; shopifyMatched++; return; }
+        const artistL = a.artist.toLowerCase(), titleL = a.title.toLowerCase();
+        for (const [k,p] of Object.entries(prijsMap)) {
+          if (k.includes(normTitle(artistL)) && k.includes(normTitle(titleL).substring(0,8))) { a.prijs=p; shopifyMatched++; return; }
+        }
+      });
+      notesMatched += shopifyMatched;
+    }
+    save();updateDiscogsStatus(true);
+    grid.innerHTML=`<div class="loading-row" style="color:var(--green)">✓ ${S.collectie.length} albums geladen${notesMatched?' · '+notesMatched+' prijzen uit notities':''}</div>`;
+    setTimeout(()=>renderCollectie(),800);
+  } catch(e){grid.innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">Fout</div><div class="empty-sub">${e.message}</div></div>`;}
+}
+
+function renderCollectie() {
+  const search=(document.getElementById('colSearch')?.value||'').toLowerCase();
+  const genre=document.getElementById('genreFilter')?.value||'';
+  let items=S.collectie;
+  if(search)items=items.filter(a=>`${a.artist} ${a.title}`.toLowerCase().includes(search)||(a.label||'').toLowerCase().includes(search));
+  if(genre)items=items.filter(a=>(a.genres||[]).includes(genre)||(a.styles||[]).includes(genre));
+  const metPrijs=S.collectie.filter(a=>parseFloat(a.prijs)>0).length;
+  const waarde=S.collectie.reduce((s,a)=>s+(parseFloat(a.prijs)||0),0);
+  document.getElementById('col-total').textContent=S.collectie.length;
+  document.getElementById('col-priced').textContent=metPrijs;
+  document.getElementById('col-unpriced').textContent=S.collectie.length-metPrijs;
+  document.getElementById('col-value').textContent=eur(waarde);
+  const genres=[...new Set(S.collectie.flatMap(a=>[...(a.genres||[]),...(a.styles||[])]))].sort();
+  const gf=document.getElementById('genreFilter');
+  if(gf){const cur=gf.value;gf.innerHTML='<option value="">Alle genres</option>'+genres.map(g=>`<option value="${g}"${g===cur?' selected':''}>${g}</option>`).join('');}
+  const perPage=48,pages=Math.ceil(items.length/perPage);
+  if(S.colPage>pages)S.colPage=1;
+  const pageItems=items.slice((S.colPage-1)*perPage,S.colPage*perPage);
+  const grid=document.getElementById('colGrid');
+  if(!items.length){grid.innerHTML=S.collectie.length?'<div class="empty" style="grid-column:1/-1"><div class="empty-icon">⌕</div><div class="empty-title">Geen resultaten</div></div>':'<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🎵</div><div class="empty-title">Collectie leeg</div><div class="empty-sub">Klik op Sync Discogs</div></div>';document.getElementById('colPag').innerHTML='';return;}
+  grid.innerHTML=pageItems.map(a=>`<div class="album-card">${a.cover?`<img class="album-cover" src="${a.cover}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`:''}<div class="album-ph" ${a.cover?'style="display:none"':''}>♪</div><div class="album-info"><div class="album-artist">${a.artist}</div><div class="album-title">${a.title}</div>${parseFloat(a.prijs)>0?`<div class="album-price">${eur(parseFloat(a.prijs))}</div>`:'<div class="album-no-price">Geen prijs</div>'}</div></div>`).join('');
+  const pag=document.getElementById('colPag');
+  if(pages<=1){pag.innerHTML='';return;}
+  pag.innerHTML=Array.from({length:Math.min(pages,10)},(_,i)=>`<button class="pag-btn${i+1===S.colPage?' active':''}" onclick="S.colPage=${i+1};renderCollectie()">${i+1}</button>`).join('')+(pages>10?`<span style="color:var(--text3);padding:0 8px">…${pages}</span>`:'');
+}
+
+// ── ALBUM AUTOCOMPLETE ───────────────
+let acR=[];
+function albumSearch(){
+  const q=(document.getElementById('tSearch')?.value||'').toLowerCase().trim();
+  const list=document.getElementById('tSuggest');
+  if(q.length<2){list.style.display='none';return;}
+  acR=S.collectie.filter(a=>`${a.artist} ${a.title}`.toLowerCase().includes(q)||a.artist.toLowerCase().includes(q)).slice(0,8);
+  if(!acR.length){list.style.display='none';document.getElementById('tAlbum').value=document.getElementById('tSearch').value;return;}
+  list.innerHTML=acR.map((a,i)=>`<div class="ac-item" onclick="selectAlbum(${i})">${a.cover?`<img class="ac-thumb" src="${a.cover}" onerror="this.style.display='none'">`:'<div class="ac-thumb" style="display:flex;align-items:center;justify-content:center;color:var(--text3)">♪</div>'}<div style="flex:1;min-width:0"><div class="ac-name">${a.artist} — ${a.title}</div><div class="ac-sub">${[a.label,a.year].filter(Boolean).join(' · ')}</div></div>${parseFloat(a.prijs)>0?`<div class="ac-price">${eur(parseFloat(a.prijs))}</div>`:''}</div>`).join('');
+  list.style.display='block';
+}
+
+function selectAlbum(i){
+  const a=acR[i];if(!a)return;
+  document.getElementById('tSuggest').style.display='none';
+  document.getElementById('tSearch').value=`${a.artist} — ${a.title}`;
+  document.getElementById('tAlbum').value=`${a.artist} - ${a.title}`;
+  const sel=document.getElementById('tSelected');sel.classList.add('show');
+  const th=document.getElementById('tThumb');if(a.cover){th.src=a.cover;th.style.display='block';}else{th.style.display='none';}
+  document.getElementById('tSelName').textContent=`${a.artist} — ${a.title}`;
+  document.getElementById('tSelLabel').textContent=[a.label,a.year].filter(Boolean).join(' · ');
+  if(parseFloat(a.inkoop)>0){document.getElementById('tInkoop').value=parseFloat(a.inkoop).toFixed(2);document.getElementById('tSelAdvies').textContent='Inkoop: '+eur(parseFloat(a.inkoop));}
+  if(parseFloat(a.prijs)>0){document.getElementById('tVerkoop').value=parseFloat(a.prijs).toFixed(2);document.getElementById('tSelPrice').textContent=eur(parseFloat(a.prijs));}
+}
+
+function resetAlbum(){document.getElementById('tSearch').value='';document.getElementById('tAlbum').value='';document.getElementById('tSelected').classList.remove('show');document.getElementById('tInkoop').value='';document.getElementById('tVerkoop').value='';}
+document.addEventListener('click',e=>{const l=document.getElementById('tSuggest');if(l&&!l.contains(e.target)&&e.target.id!=='tSearch')l.style.display='none';});
+
+// ── SETTINGS ─────────────────────────
+function loadSettingsForm(){
+  const s=S.settings;
+  document.getElementById('sToken').value=s.discogsToken||'';
+  document.getElementById('sUsername').value=s.discogsUsername||'';
+  document.getElementById('sFolderId').value=s.discogsFolderId||'';
+  document.getElementById('fLaag').value=s.fLaag||1.5;
+  document.getElementById('fHoog').value=s.fHoog||1.7;
+  document.getElementById('fJapan').value=s.fJapan||2.5;
+  document.getElementById('fJPY').value=s.fJPY||160;
+}
+
+async function saveDiscogs(){
+  S.settings.discogsToken=document.getElementById('sToken').value.trim();
+  S.settings.discogsUsername=document.getElementById('sUsername').value.trim();
+  S.settings.discogsFolderId=document.getElementById('sFolderId').value.trim();
+  save();const msg=document.getElementById('discogsMsg');msg.textContent='Testen…';msg.style.color='var(--text2)';
+  try{const r=await fetch(`https://api.discogs.com/users/${S.settings.discogsUsername}?token=${S.settings.discogsToken}`);if(r.ok){const d=await r.json();msg.textContent='✓ '+d.username+' · '+d.num_collection+' albums';msg.style.color='var(--green)';updateDiscogsStatus(true);}else{msg.textContent='✗ Fout '+r.status;msg.style.color='var(--red)';}}catch(e){msg.textContent='✗ Verbindingsfout';msg.style.color='var(--red)';}
+}
+
+function saveFactors(){S.settings.fLaag=parseFloat(document.getElementById('fLaag').value)||1.5;S.settings.fHoog=parseFloat(document.getElementById('fHoog').value)||1.7;S.settings.fJapan=parseFloat(document.getElementById('fJapan').value)||2.5;S.settings.fJPY=parseFloat(document.getElementById('fJPY').value)||160;save();alert('Opgeslagen!');}
+function updateDiscogsStatus(on){document.getElementById('discogsDot').className='status-dot'+(on?' on':'');document.getElementById('discogsLabel').textContent=on?(S.settings.discogsUsername||'Verbonden'):'Discogs';}
+
+// ── BERTUS IMPORT ────────────────────
+function importBertus(event){
+  const files=Array.from(event.target.files);if(!files.length)return;
+  const msg=document.getElementById('bertusMsg');msg.textContent=files.length+' bestanden verwerken…';
+  let allEANs={},done=0;
+  files.forEach(file=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      const lines=e.target.result.split('\n').filter(l=>l.trim());if(!lines.length){done++;check();return;}
+      const sep=lines[0].includes(';')?';':',';
+      const hdrs=lines[0].split(sep).map(h=>h.trim().toLowerCase().replace(/['"]/g,''));
+      const eanIdx=hdrs.findIndex(h=>h.includes('ean')||h.includes('barcode'));
+      const priceIdx=hdrs.findIndex(h=>h==='itemprice'||h.includes('price'));
+      if(eanIdx===-1||priceIdx===-1){done++;check();return;}
+      for(let i=1;i<lines.length;i++){
+        const vals=lines[i].split(sep).map(v=>v.trim().replace(/['"]/g,''));
+        let ean=(vals[eanIdx]||'').replace(/\D/g,'');if(ean.length===12)ean='0'+ean;
+        const inkoop=parseFloat((vals[priceIdx]||'').replace(',','.'))||0;
+        if(ean.length===13&&inkoop>0){const f=inkoop>=S.settings.fHoog?S.settings.fHoog:S.settings.fLaag;allEANs[ean]={inkoop,verkoop:markup(inkoop,f)};}
+      }
+      done++;check();
+    };r.readAsText(file);
+  });
+  function check(){
+    if(done<files.length)return;
+    S.bertusEANs={...S.bertusEANs,...allEANs};
+    let matched=0;
+    S.collectie.forEach(a=>{if(a.ean&&allEANs[a.ean]){a.inkoop=allEANs[a.ean].inkoop;a.prijs=allEANs[a.ean].verkoop;matched++;}});
+    save();
+    msg.innerHTML=`<span style="color:var(--green)">✓ ${Object.keys(allEANs).length} prijzen geladen${matched?' · '+matched+' albums gekoppeld':''}</span>`;
+    event.target.value='';
+  }
+}
+
+// ── CSV IMPORT/EXPORT ────────────────
+function importCSV(event){
+  const file=event.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const lines=e.target.result.split('\n').filter(l=>l.trim());if(!lines.length)return;
+    const sep=lines[0].includes(';')?';':',';
+    const hdrs=lines[0].split(sep).map(h=>h.trim().toLowerCase().replace(/['"]/g,''));
+    const get=(names,vals)=>{for(const n of names){const i=hdrs.indexOf(n);if(i>=0&&vals[i])return vals[i];}return '';};
+    let imported=0;
+    for(let i=1;i<lines.length;i++){
+      const vals=lines[i].split(sep).map(v=>v.trim().replace(/['"]/g,''));
+      const album=get(['album','omschrijving','titel','title'],vals);
+      const datum=get(['datum','date','dag'],vals);
+      const vs=get(['verkoopprijs','verkoop','prijs','price','omzet'],vals);
+      const is=get(['inkoopprijs','inkoop','cost'],vals);
+      const kanaal=get(['kanaal','channel','bron','source'],vals)||'Vinted';
+      const verkoop=parseFloat(vs.replace(',','.'))||0;
+      const inkoop=parseFloat(is.replace(',','.'))||0;
+      if(!verkoop&&!album)continue;
+      let pd=datum;
+      if(datum&&datum.includes('-')){const p=datum.split('-');if(p[0].length<=2)pd=`${p[2]||new Date().getFullYear()}-${String(p[1]).padStart(2,'0')}-${String(p[0]).padStart(2,'0')}`;}
+      S.transacties.push({id:Date.now()+i,album:album||'Import',datum:pd||new Date().toISOString().split('T')[0],kanaal,verkoop,inkoop,winst:verkoop-inkoop,type:'import'});
+      imported++;
+    }
+    save();renderTrans();renderDashboard();alert(imported+' transacties geïmporteerd!');
+  };r.readAsText(file);event.target.value='';
+}
+
+function exportCSV(){
+  const hdrs=['Datum','Album','Verkoopprijs','Inkoopprijs','Winst','Marge%','Kanaal'];
+  const rows=S.transacties.map(t=>[t.datum,`"${t.album}"`,t.verkoop,t.inkoop,t.winst,t.verkoop>0?((t.winst/t.verkoop)*100).toFixed(1):0,t.kanaal].join(';'));
+  const blob=new Blob([[hdrs.join(';'),...rows].join('\n')],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='major9_transacties.csv';a.click();
+}
+
+function exportData(){
+  const blob=new Blob([JSON.stringify({transacties:S.transacties,inkopen:S.inkopen,collectie:S.collectie,bertusEANs:S.bertusEANs,settings:{...S.settings,discogsToken:'***'}},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='major9_backup.json';a.click();
+}
+
+function importData(event){
+  const file=event.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.transacties)S.transacties=d.transacties;if(d.inkopen)S.inkopen=d.inkopen;if(d.collectie)S.collectie=d.collectie;if(d.bertusEANs)S.bertusEANs=d.bertusEANs;save();renderDashboard();alert('Geïmporteerd!');}catch(e){alert('Ongeldig bestand');}};
+  r.readAsText(file);event.target.value='';
+}
+
+function clearData(){if(!confirm('Alles wissen?'))return;S.transacties=[];S.inkopen=[];S.collectie=[];save();renderDashboard();renderTrans();}
+
+// ── SHOPIFY CSV IMPORT ───────────────
+function importShopifyCSV(event) {
+  const file = event.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = e => {
+    const lines = e.target.result.split('\n').filter(l => l.trim());
+    if (!lines.length) return;
+    const sep = lines[0].includes(';') ? ';' : ',';
+    const hdrs = lines[0].split(sep).map(h => h.trim().replace(/['"]/g, ''));
+
+    const get = (row, names) => {
+      for (const n of names) {
+        const i = hdrs.indexOf(n);
+        if (i >= 0 && row[i]) return row[i].trim().replace(/^"|"$/g, '');
+      }
+      return '';
+    };
+
+    // Build price map: normalize title → prijs
+    const prijsMap = {};
+    const barcodeMap = {};
+    for (let i = 1; i < lines.length; i++) {
+      const vals = lines[i].split(sep);
+      const title = get(vals, ['Title']);
+      const prijs = parseFloat(get(vals, ['Variant Price'])) || 0;
+      const barcode = get(vals, ['Variant Barcode']);
+      if (!title || !prijs) continue;
+      const key = normTitle(title);
+      prijsMap[key] = prijs;
+      if (barcode) barcodeMap[barcode] = prijs;
+    }
+
+    if (S.collectie.length > 0) {
+      // Match prices to existing Discogs collectie
+      let matched = 0;
+      S.collectie.forEach(a => {
+        // Try barcode match first
+        if (a.ean && barcodeMap[a.ean]) {
+          a.prijs = barcodeMap[a.ean];
+          matched++;
+          return;
+        }
+        // Try title match
+        const key = normTitle(`${a.artist} - ${a.title}`);
+        if (prijsMap[key]) {
+          a.prijs = prijsMap[key];
+          matched++;
+          return;
+        }
+        // Fuzzy: check if any shopify title contains artist name
+        const artistLower = a.artist.toLowerCase();
+        const titleLower = a.title.toLowerCase();
+        for (const [k, p] of Object.entries(prijsMap)) {
+          if (k.includes(artistLower) && k.includes(titleLower.substring(0, 8))) {
+            a.prijs = p; matched++; return;
+          }
+        }
+      });
+      save();
+      renderCollectie();
+      alert(`✓ ${matched} van ${S.collectie.length} albums gekoppeld met verkoopprijs`);
+    } else {
+      // No Discogs data yet — store prices for later matching
+      S.shopifyPrijzen = { prijsMap, barcodeMap };
+      save();
+      alert(`✓ ${Object.keys(prijsMap).length} prijzen geladen. Sync Discogs om ze te koppelen.`);
+    }
+    event.target.value = '';
+  };
+  r.readAsText(file);
+}
+
+function normTitle(t) {
+  return t.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+[{"id":1,"title":"November Scorpio","artist":"Tiana Major9","label":"+1 Records","prijs":33.99,"inkoop":21.24,"genres":["Pop"],"cover":"https://i.discogs.com/GpmiTlCR0F825wWrHjPgiF7DD6byhV6H0YYNEZe7ij4/rs:fit/g:sm/q:90/h:597/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2Nzgy/MzgwLTE3NzM2NTE5/NjUtMzE3MC5qcGVn.jpeg","ean":"708857242016","qty":2},{"id":2,"title":"Relaxin'","artist":"Miles Davis","label":"20th Century Masterworks","prijs":19.99,"inkoop":12.49,"genres":["Jazz"],"cover":"https://i.discogs.com/MyiiecNeK-m-uLnU8wYyll92wYxaYsXqJ7DOCt7DXp4/rs:fit/g:sm/q:90/h:569/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2ODAz/MDA1LTE3NzM4MTk2/NDYtOTkxNi5qcGVn.jpeg","ean":"8436563186820","qty":1},{"id":3,"title":"Rihla","artist":"Mansur Brown","label":"Amai Records","prijs":32.99,"inkoop":20.62,"genres":["Electro"],"cover":"https://i.discogs.com/lIizi5Zde_tDUAXMJ1CQ7bgKql2Yc3AoU2l3fujM1fc/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0NzQw/NTkxLTE3NzEwMTE5/MTQtOTMwOS5qcGVn.jpeg","ean":"5 056818 803505","qty":2},{"id":4,"title":"Departures & Arrivals: Adventures Of Captain Curt","artist":"Curtis Harding","label":"Anti-","prijs":25.99,"inkoop":16.24,"genres":[],"cover":"https://i.discogs.com/64caFinvvZMbPn5qoBvlHaL3Xs-hpgqS2JoAqj1wKpw/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0OTk2/NjAxLTE3NTg4ODg5/MTItMzM0MC5qcGVn.jpeg","ean":"8714092809817","qty":2},{"id":5,"title":"3 Feet High And Rising","artist":"De La Soul","label":"AOI Records","prijs":38.99,"inkoop":24.37,"genres":["Electro","RAP / HIP HOP"],"cover":"https://i.discogs.com/lcMHWMxEjoLhNMIjykYeTgYgNS_Ouv9yeO4IWIf1f2g/rs:fit/g:sm/q:90/h:593/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI2Mjc3/MjEyLTE2Nzc3NTgz/NTAtMjYwOC5qcGVn.jpeg","ean":"810098502603","qty":2},{"id":6,"title":"Expreso Ritmico","artist":"Ricardo Eddy Martinez","label":"Areito","prijs":25.99,"inkoop":16.24,"genres":["Funk","Latin"],"cover":"https://i.discogs.com/vlqXjThV0i2csYvqZB71wP85WCiQ6XOb0LIE1g9Fkvk/rs:fit/g:sm/q:90/h:574/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2NTYz/MzQxLTE3NzE2NzIw/OTAtMzc1NS5qcGVn.jpeg","ean":"5024017007130","qty":1},{"id":7,"title":"Temporary Highs In The Violet Skies","artist":"Snoh Aalegra","label":"ARTium Recordings","prijs":48.99,"inkoop":30.62,"genres":[],"cover":"https://i.discogs.com/DX04JupIDD_HUbJi0RrZw5najT9j2n4FGEdoT2WPk4c/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIwNDI5/OTY1LTE2MzQyMjEw/NDMtODk5OS5qcGVn.jpeg","ean":"810061165705","qty":2},{"id":8,"title":"Being","artist":"Baaba Maal","label":"Atelier Live","prijs":25.99,"inkoop":16.24,"genres":["Electro","Folk"],"cover":"https://i.discogs.com/Yw56JfP94U_sihlAZyL8Ov9K7Xl26Hc5QD42-z_C1lY/rs:fit/g:sm/q:90/h:600/w:595/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI3MzU4/ODg0LTE2ODcwOTA3/MTctODc0OC5qcGVn.jpeg","ean":"5052442023029","qty":1},{"id":9,"title":"Mystery","artist":"Allen Stone","label":"ATO Records","prijs":23.99,"inkoop":14.99,"genres":["R&B","Soul"],"cover":"https://i.discogs.com/b49EntQCHz8vQ7Hso-9-luU9LFyIPiux05GAP03pLaE/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMyMTk5/MzMwLTE3MzA4ODcy/NzEtNzE5MS5qcGVn.jpeg","ean":"880882644819","qty":1},{"id":10,"title":"Yol","artist":"Alt\u0131n G\u00fcn","label":"ATO Records","prijs":30.99,"inkoop":19.37,"genres":["Electro","Folk","Funk"],"cover":"https://i.discogs.com/xqd8xvMVz9fyqfJPKJKaD26B8lJW0cdQv3wRQDbCJ_A/rs:fit/g:sm/q:90/h:592/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIzNTIy/NjM2LTE3MTA3MzE4/MTYtNzExNi5qcGVn.jpeg","ean":"8 80882 46091 4","qty":1},{"id":11,"title":"Don't Be Dumb","artist":"ASAP Rocky","label":"AWGE","prijs":32.99,"inkoop":20.62,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/gF0IgtwQwxtoDd9iJNAgD1Y-EI80h8xA8CM6Tkxlxu8/rs:fit/g:sm/q:90/h:598/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM3MTUw/MjQyLTE3NzcwNDc4/MjMtNDA1Ny5qcGVn.jpeg","ean":"1 99584 14761 1","qty":2},{"id":12,"title":"Keep The Faith","artist":"Faith Evans","label":"Bad Boy Entertainment","prijs":28.99,"inkoop":18.12,"genres":["Soul"],"cover":"https://i.discogs.com/eQEX9VBZ5rWZQ20YuSmfJB4FpbJU5e1_O478Oc-wTp4/rs:fit/g:sm/q:90/h:600/w:595/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5MDE4/ODYwLTE3MDA5Mzk5/OTAtMzk5MC5qcGVn.jpeg","ean":"6 03497 83366 5","qty":3},{"id":13,"title":"Sababa 5","artist":"Sababa 5","label":"Batov Records","prijs":23.99,"inkoop":14.99,"genres":["Folk"],"cover":"https://i.discogs.com/1INdpCR2wZFLk0nAxzA1FAP0-low5fgjxbC9DDES8hU/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0MzA5/OTIwLTE2NjE0MzE3/NjItODE1NC5qcGVn.jpeg","ean":"4062548041972","qty":2},{"id":14,"title":"Kokoro - \u3053\u3053\u308d","artist":"Sababa 5, Yurika Hanashima","label":"Batov Records","prijs":25.99,"inkoop":16.24,"genres":["Folk","Pop"],"cover":"https://i.discogs.com/HXtkKf5xqaDGyE3P4eYeToHr5-SYEa7G7v4OA5a2hOk/rs:fit/g:sm/q:90/h:600/w:593/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxMTM4/OTYxLTE3MzY2MjUx/MjYtOTQ0Ny5qcGVn.jpeg","ean":"4062548085815","qty":2},{"id":15,"title":"Movin'","artist":"Selah Sue, The Gallands","label":"Because Music","prijs":27.99,"inkoop":17.49,"genres":["Jazz","Pop"],"cover":"https://i.discogs.com/wQHABSoEDwVDST-cxobrb3f2BrzeWZH59sN_tcpk2lk/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2ODM3/NDQ1LTE3NzQxMDY0/MTktNzk2My5qcGVn.jpeg","ean":"5056556173533","qty":4},{"id":16,"title":"Sou Filho D\u00easse Ch\u00e3o","artist":"Eduardo Araujo, Silvinha Ara\u00fajo","label":"Beverly","prijs":25.99,"inkoop":16.24,"genres":["Folk","Funk","Latin"],"cover":"https://i.discogs.com/rDxNQeYlO24rueK_vmfXLi_3kxqeTFG78piltRddMSs/rs:fit/g:sm/q:90/h:596/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM1NzY0/NzY4LTE3NjQzNDMx/OTgtNTg5MS5qcGVn.jpeg","ean":"5024017007079","qty":1},{"id":17,"title":"Beat Tape 1","artist":"Tom Misch","label":"Beyond The Groove","prijs":22.99,"inkoop":14.37,"genres":["Jazz","RAP / HIP HOP"],"cover":"https://i.discogs.com/eVfiNkGhJZhMIMs2n74NBYP1bP2CyV37LfexRQsOd5w/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE0OTky/Mzk5LTE1ODk3MTkz/NzItODYyOS5qcGVn.jpeg","ean":"5056167120452","qty":2},{"id":18,"title":"Beat Tape 2","artist":"Tom Misch","label":"Beyond The Groove","prijs":23.99,"inkoop":14.99,"genres":["Electro","Neo-Soul","RAP / HIP HOP"],"cover":"https://i.discogs.com/5BiFPQpZ2gSrGSAWS8tdDuZa8KDUS_drvgnn5AdDkqw/rs:fit/g:sm/q:90/h:500/w:500/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTgzNDg1/ODItMTQ1OTg1NzA1/NS0xNjYwLmpwZWc.jpeg","ean":"5060454941019","qty":2},{"id":19,"title":"Geography","artist":"Tom Misch","label":"Beyond The Groove","prijs":26.99,"inkoop":16.87,"genres":["Electro","Funk","Jazz","RAP / HIP HOP"],"cover":"https://i.discogs.com/I8SDIyUFGdGoK0N4vxwfLJ1cySxlnG8aFOj-3dCwkkA/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTExNzU0/MjU1LTE3NzgwODMx/NTItMTY5NS5qcGVn.jpeg","ean":"5056167103424","qty":1},{"id":20,"title":"Full Circle","artist":"Tom Misch","label":"Beyond The Groove","prijs":31.99,"inkoop":19.99,"genres":["Folk"],"cover":"https://i.discogs.com/2zOnu0PGLU9muFz95EeHYVYBG5sv-Hd0swZWMokRUnU/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2ODky/MTk1LTE3NzQ3MDg3/NjgtNzk3NS5qcGVn.jpeg","ean":"5 056167 183365","qty":1},{"id":21,"title":"Return To The 37th Chamber","artist":"El Michels Affair","label":"Big Crown Records","prijs":26.99,"inkoop":16.87,"genres":["Funk","Soul"],"cover":"https://i.discogs.com/uRsbTe7xLQjQowO3MXtgOste4DnbhdpkcUUM_U8wIi8/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEwMTc4/ODY2LTE2NjA0Njgy/NTUtMzYwMC5qcGVn.jpeg","ean":"349223001716","qty":1},{"id":22,"title":"Sounding Out The City","artist":"El Michels Affair","label":"Big Crown Records","prijs":26.99,"inkoop":16.87,"genres":["Funk","Soul"],"cover":"https://i.discogs.com/wzy78ccPqFn4gJSVZ77u2x0OOFoCGNPPEXpswzY5buM/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTg3NTMw/NjUtMTQ5NzY0ODU5/Mi00ODI0LnBuZw.jpeg","ean":"349223002218","qty":1},{"id":23,"title":"Forever & Ever","artist":"Thee Heart Tones","label":"Big Crown Records","prijs":26.99,"inkoop":16.87,"genres":["Soul"],"cover":"https://i.discogs.com/HxGT7EeMxxaF8tCdPTD4MH-e70CvPDcNQEnW-Yydpnk/rs:fit/g:sm/q:90/h:599/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxNTUy/MzAzLTE3MjQ0MDk0/ODYtMzA1My5qcGVn.jpeg","ean":"349223016819","qty":3},{"id":24,"title":"Perak","artist":"Thee Marloes","label":"Big Crown Records","prijs":26.99,"inkoop":16.87,"genres":["Soul"],"cover":"https://i.discogs.com/RmRLGYX4vClmpwLklmvJlZv5g0emFTpsAwLPeDHendM/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxNDQw/MDUwLTE3MjMyODQx/NDMtNjY4MC5qcGVn.jpeg","ean":"349223017915","qty":2},{"id":25,"title":"24 Hr Sports (Instrumentals)","artist":"El Michels Affair","label":"Big Crown Records","prijs":20.99,"inkoop":13.12,"genres":["Soul"],"cover":"https://i.discogs.com/M-BSANYSnOWFbfNehXwWBz4LzCNs1eh5bWg1Tbi4LQY/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2NzU5/OTE5LTE3NzM0MDYz/MTUtODU0My5qcGVn.jpeg","ean":"3 49223 01931 5","qty":4},{"id":26,"title":"Di Hotel Malibu","artist":"Thee Marloes","label":"Big Crown Records","prijs":26.99,"inkoop":16.87,"genres":["Soul"],"cover":"https://i.discogs.com/X4IzcnM0V1QED16wRSg6uxDDM5a1R_VCV2HT1BSxuhg/rs:fit/g:sm/q:90/h:585/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM3Mzg1/ODg2LTE3NzkyMDc4/MzItMjYyMC5qcGVn.jpeg","ean":"349223020212","qty":2},{"id":27,"title":"Yeti Season","artist":"El Michels Affair","label":"Big Crown Records","prijs":28.99,"inkoop":18.12,"genres":["Folk","Soul"],"cover":"https://i.discogs.com/TabnoxRfJBvL9Pj7EopL0fu0jY9nVN0mu-I9vwuBW5I/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE3OTc1/NTA2LTE2NDE0MTEy/MjgtNTk2OS5wbmc.jpeg","ean":"0349223006049","qty":1},{"id":28,"title":"24 Hr Sports","artist":"El Michels Affair","label":"Big Crown Records","prijs":26.99,"inkoop":16.87,"genres":[],"cover":"https://i.discogs.com/OqgiRP7hVYYBYb3aBvnPXYAbcitvM9rbZd2RY-7Rcl0/rs:fit/g:sm/q:90/h:600/w:576/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0OTU5/Mjk5LTE3NTY1MTU1/MjItMjE2OC5qcGVn.jpeg","ean":"349223013351","qty":1},{"id":29,"title":"Reboot","artist":"Ronnie Foster","label":"Blue Note","prijs":20.99,"inkoop":13.12,"genres":["Jazz"],"cover":"https://i.discogs.com/dn-zDKBYAO63dSxTlAKY4uql1BjaxvTjiXzicGCcWQw/rs:fit/g:sm/q:90/h:599/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIzOTYz/MjA0LTE2NjExODI4/MjQtOTEzNC5qcGVn.jpeg","ean":"6 02445 49980 9","qty":2},{"id":30,"title":"Amos Lee","artist":"Amos Lee","label":"Blue Note","prijs":24.99,"inkoop":15.62,"genres":["Folk"],"cover":"https://i.discogs.com/uWOjv2vRSKLFi8FHp96xyvO2On8U5Kx8fre74HuCA1Y/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0ODMw/NjYyLTE3NTUzMTA1/OTktMjMxMy5qcGVn.jpeg","ean":"724359735016","qty":2},{"id":31,"title":"No Beginning No End","artist":"Jos\u00e9 James","label":"Blue Note","prijs":42.99,"inkoop":26.87,"genres":["Jazz"],"cover":"https://i.discogs.com/2pL0Ou7rwQ7IeGg-16hAqfxeauJYRs1la5DJY2QxV3w/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQyMjQ5/MjItMTM1OTE2MDg5/MS0zMzA0LmpwZWc.jpeg","ean":"5099997329718","qty":1},{"id":32,"title":"Maiden Voyage","artist":"Herbie Hancock","label":"Blue Note","prijs":32.99,"inkoop":20.62,"genres":["Jazz"],"cover":"https://i.discogs.com/3LkW3XtjzmsJ_mjZQRbmNGyLMs-IAVc7pf_H-nUYrbI/rs:fit/g:sm/q:90/h:597/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMyMjY1/ODkxLTE3MzEzNzY0/MzItODUzOS5qcGVn.jpeg","ean":"6 02435 11746 2","qty":1},{"id":33,"title":"Turning Point","artist":"Lonnie Smith","label":"Blue Note","prijs":24.99,"inkoop":15.62,"genres":["Jazz"],"cover":"https://i.discogs.com/fD9v6vhMokMxGyDPhhBXCwRczAh9gX30uzXuNw5CimM/rs:fit/g:sm/q:90/h:596/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI3NzM5/MDgzLTE3MDU3MDI3/MzMtODEzNS5qcGVn.jpeg","ean":"6 02455 23404 9","qty":2},{"id":34,"title":"Speak No Evil","artist":"Wayne Shorter","label":"Blue Note","prijs":29.99,"inkoop":18.74,"genres":["Jazz"],"cover":"https://i.discogs.com/ZHXvpmyPq4CRkdWjsznCUDkoADegEQsqkKDV8cO7TOU/rs:fit/g:sm/q:90/h:595/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE2OTQx/Nzc0LTE3NTk2MjMy/OTYtNjM2OC5qcGVn.jpeg","ean":"6 02507 44042 8","qty":1},{"id":35,"title":"Ready For Freddie","artist":"Freddie Hubbard","label":"Blue Note","prijs":26.99,"inkoop":16.87,"genres":["Jazz"],"cover":"https://i.discogs.com/1COOYKZ5vebf0b9a51VZrXPEW4ASYYHvHArXJbLTHA8/rs:fit/g:sm/q:90/h:591/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIwNjc2/MDM3LTE2MzQ4MjM5/NjItNjQxMi5qcGVn.jpeg","ean":"6 02435 96791 2","qty":1},{"id":36,"title":"Cool Struttin'","artist":"Sonny Clark","label":"Blue Note","prijs":20.99,"inkoop":13.12,"genres":["Jazz"],"cover":"https://i.discogs.com/bI2KkPLC54dvwHItls5sc1YsmMzK_34oA_-8gxj67VQ/rs:fit/g:sm/q:90/h:597/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE5MjY5/NDkwLTE2NzM5OTEx/ODQtNzY4NS5qcGVn.jpeg","ean":"6 02435 79178 4","qty":1},{"id":37,"title":"Empyrean Isles","artist":"Herbie Hancock","label":"Blue Note","prijs":32.99,"inkoop":20.62,"genres":["Jazz"],"cover":"https://i.discogs.com/laEFlfGxvgPFbyusePr42mZ_akNk73ochoaixzMBSGs/rs:fit/g:sm/q:90/h:595/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI2NDQx/MzI3LTE3NjMwMTQ5/MTEtNTg1MC5qcGVn.jpeg","ean":"6 02448 59562 1","qty":1},{"id":38,"title":"Midnight Special","artist":"Jimmy Smith","label":"Blue Note","prijs":24.99,"inkoop":15.62,"genres":["Jazz"],"cover":"https://i.discogs.com/x4fMOI9lvqXjilFad0eo3vF7QXQ1_LEF-yZMowpGkdI/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI4MjY4/MjA2LTE2OTQ3NzM5/MjItNjQxMy5qcGVn.jpeg","ean":"6 02455 23659 3","qty":2},{"id":39,"title":"Apocalypse","artist":"Thundercat","label":"Brainfeeder","prijs":43.99,"inkoop":27.49,"genres":["Electro","Jazz","Neo-Soul"],"cover":"https://i.discogs.com/MiCaYVAPuHkzX7Ji-0IoUsfEhxOKz_IkbW-et4VEtt4/rs:fit/g:sm/q:90/h:594/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMwMDkx/MzEzLTE3MzE1OTQz/ODUtNjc1OC5qcGVn.jpeg","ean":"5054429177404","qty":2},{"id":40,"title":"Mood Valiant","artist":"Hiatus Kaiyote","label":"Brainfeeder","prijs":35.99,"inkoop":22.49,"genres":["Electro","Jazz","Neo-Soul"],"cover":"https://i.discogs.com/0-t09Q1NS_6833nIaBZJKOa4AP8vF7yqWBbkKMB1qjg/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE5MjQy/ODg5LTE2MjUwNTU5/NjUtNzgwNy5qcGVn.jpeg","ean":"5054429148459","qty":1},{"id":41,"title":"Love Heart Cheat Code","artist":"Hiatus Kaiyote","label":"Brainfeeder Records","prijs":31.99,"inkoop":19.99,"genres":["Electro","Jazz","Neo-Soul","RAP / HIP HOP"],"cover":"https://i.discogs.com/uPNglE53dqlW20bu43SYi2cM2jkJvQmHZ8VcvEgoMjw/rs:fit/g:sm/q:90/h:500/w:500/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxMDgy/OTA5LTE3MTk3MzY4/OTMtNzMwOS5qcGVn.jpeg","ean":"5054429192278","qty":3},{"id":42,"title":"You Give Me Fever","artist":"Soweto","label":"Brixton Records","prijs":12.99,"inkoop":8.12,"genres":["Ska"],"cover":"https://i.discogs.com/yq1KJcRY62DovbXqS9rTgN9-fUcGnk9G3bW6tKPS9pA/rs:fit/g:sm/q:90/h:400/w:400/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE4MDg0/MjAtMTI0NDY3NDcz/NS5qcGVn.jpeg","ean":"8437007552379","qty":1},{"id":43,"title":"Masego","artist":"Masego","label":"Capitol Records","prijs":63.99,"inkoop":39.99,"genres":[],"cover":"https://i.discogs.com/a6uwTMuHCOOn621syinUN0usfEL064ARsyTPO4EFg9s/rs:fit/g:sm/q:90/h:598/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI3Nzcz/OTA0LTE2OTIyMDkw/NjQtNjEwMi5qcGVn.jpeg","ean":"6 02455 65365 9","qty":2},{"id":44,"title":"Malik","artist":"Venna","label":"Cashmere Thoughts","prijs":20.99,"inkoop":13.12,"genres":["Jazz"],"cover":"https://i.discogs.com/2sK0-0AHmTXzRRGuLVRXHUukLOxpPXsc-VqX56Ts8m8/rs:fit/g:sm/q:90/h:590/w:590/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM1MDk5/MjY3LTE3NTc4Njg1/MDktNTc3Mi5qcGVn.jpeg","ean":"0637962105780","qty":4},{"id":45,"title":"The Electric Spanking Of War Babies","artist":"Funkadelic","label":"Charly Records","prijs":22.99,"inkoop":14.37,"genres":[],"cover":"https://i.discogs.com/96KYLl4LKghJrzxWDdoqLl36776eyL-7CyYBUXSuIzI/rs:fit/g:sm/q:90/h:596/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI1OTEy/NzQ3LTE2NzQ5MTI2/MzgtNjczOS5qcGVn.jpeg","ean":"5060767443149","qty":1},{"id":46,"title":"Illmatic","artist":"Nas","label":"Columbia","prijs":18.99,"inkoop":11.87,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/b0qJpIt0ZSS8Pca3MvvcVRMDhIbgZzqePzEWjl21AWA/rs:fit/g:sm/q:90/h:600/w:594/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIxODY3/MjE3LTE2NDMwMTEy/MDMtNTkxMC5wbmc.jpeg","ean":"5099747595912","qty":3},{"id":47,"title":"Coming Home","artist":"Leon Bridges","label":"Columbia","prijs":21.99,"inkoop":13.74,"genres":["Funk","R&B","Soul"],"cover":"https://i.discogs.com/lAcbYrlUX7-ZBiT4wMtlbTaf2VbDoMADVn8Z6lzFvsE/rs:fit/g:sm/q:90/h:594/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMzNTg1/OTg3LTE3NDM3MDQz/MzctNjYxNC5qcGVn.jpeg","ean":"8 88750 89141 9","qty":1},{"id":48,"title":"Kind Of Blue","artist":"Miles Davis","label":"Columbia","prijs":23.99,"inkoop":14.99,"genres":["Jazz"],"cover":"https://i.discogs.com/yvbHhr77AEVNQgNzhhWZvT3U_SYRYpofD9CgSBQrSSE/rs:fit/g:sm/q:90/h:600/w:590/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI4MDMy/ODE2LTE2OTI2MDY4/OTYtNTQ2My5qcGVn.jpeg","ean":"190758834917","qty":1},{"id":49,"title":"Maxwell's Urban Hang Suite","artist":"Maxwell","label":"Columbia","prijs":41.99,"inkoop":26.24,"genres":["Neo-Soul"],"cover":"https://i.discogs.com/6TVCgOarC21UkiolO70D1utnaa1dniT43EBr3qqOQtI/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM3NTQ4/MjQwLTE3ODA2OTgw/MzktNjA5MS5qcGVn.jpeg","ean":"1 99584 38191 6","qty":1},{"id":50,"title":"Underground","artist":"Thelonious Monk","label":"Columbia","prijs":25.99,"inkoop":16.24,"genres":["Jazz"],"cover":"https://i.discogs.com/jxyjRhG34xLkHZRG-421Rvok6XZfUOIyZPAh9wuFCJ0/rs:fit/g:sm/q:90/h:589/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2Njkz/NDE1LTE3NzMxNjg5/MTctNDU2OS5qcGVn.jpeg","ean":"8719262041394","qty":1},{"id":51,"title":"When I Get Home","artist":"Solange","label":"Columbia","prijs":24.99,"inkoop":15.62,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/7kSa0bykVOwH4IkzB2XrMGgB5l7kTfKRgcvYpLnshUk/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE0MDg5/MzgxLTE1Njk5NTYy/NjgtNDQwOC5qcGVn.jpeg","ean":"1 90759 44041 4","qty":2},{"id":52,"title":"Cherry Bomb","artist":"Tyler, The Creator","label":"Columbia","prijs":41.99,"inkoop":26.24,"genres":["Neo-Soul","RAP / HIP HOP"],"cover":"https://i.discogs.com/rI5FZXKW0pi0SIijGKbwWEhxh2Zfo1gsDs3YvCtvups/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0ODkw/NzU4LTE3NTYyMjI2/MTgtMjI4My5qcGVn.jpeg","ean":"1 96588 24331 8","qty":2},{"id":53,"title":"MTV Unplugged 2.0","artist":"Lauryn Hill","label":"Columbia","prijs":29.99,"inkoop":18.74,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/jaXNHiAhqoooxtHWl2vHNaNDdmFEUJy_zeO6axDGDRM/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0MTE5/MDE1LTE2NTk3OTk4/NDItNDIxNC5qcGVn.jpeg","ean":"1 9075-85121-1 2","qty":2},{"id":54,"title":"Letters From The Atlantic","artist":"Butcher Brown","label":"Concord Jazz","prijs":32.99,"inkoop":20.62,"genres":["Jazz"],"cover":"https://i.discogs.com/vzVXo6JGfO8B82CFVQgXTHqARQjvDkX8Ce4U2BTEF9U/rs:fit/g:sm/q:90/h:600/w:592/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMzNzQ5/MjM1LTE3NDY0NzU2/NjUtOTY4NS5qcGVn.jpeg","ean":"8 88072 66936 9","qty":2},{"id":55,"title":"London Brew","artist":"London Brew","label":"Concord Jazz","prijs":20.99,"inkoop":13.12,"genres":["Jazz"],"cover":"https://i.discogs.com/EN59Xfu3IOrEWnZpxD2VSnT0rOouFUX_9I5IjBl-GrQ/rs:fit/g:sm/q:90/h:600/w:596/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI2NjY4/OTgyLTE2OTQzNTk0/NzMtODMxOS5qcGVn.jpeg","ean":"888072514270","qty":2},{"id":56,"title":"Born Again","artist":"Young Holt Unlimited","label":"Cotillion","prijs":25.99,"inkoop":16.24,"genres":["Jazz"],"cover":"https://i.discogs.com/puirWldaq4fofQKKzs1lduQzHdbd-th8JXeaaF-rOec/rs:fit/g:sm/q:90/h:600/w:595/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2Njgy/NzQxLTE3NzI4OTA2/MDUtODIyOC5qcGVn.jpeg","ean":"8719262040625","qty":1},{"id":57,"title":"Aman Iman","artist":"Tinariwen, Tinariwen","label":"Craft Recordings","prijs":28.99,"inkoop":18.12,"genres":["Folk"],"cover":"https://i.discogs.com/6IyPUkNwIi6LNfpA03YP9g9hmQKuRrOTXlhOyy9OGK0/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMyNzg1/NzQ5LTE3MzYzMzcy/MzAtMjU2OS5qcGVn.jpeg","ean":"888072419759","qty":3},{"id":58,"title":"Wattstax: The Living Word","artist":"Various","label":"Craft Recordings","prijs":22.99,"inkoop":14.37,"genres":["Funk","Soul"],"cover":"https://i.discogs.com/26zVlDI9HJS1k7trHtv_i7d-3Y9AdMvqF13tuiBBzyw/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI2NDI0/ODE1LTE2Nzg4NDg4/ODMtMjgwMy5qcGVn.jpeg","ean":"888072442177","qty":4},{"id":59,"title":"City Life","artist":"The Blackbyrds","label":"Craft Recordings","prijs":42.99,"inkoop":26.87,"genres":["Jazz"],"cover":"https://i.discogs.com/wICIOMsb9HLOGXxOP3FuXL6MOOdOcP-GJpxu7xkJBf8/rs:fit/g:sm/q:90/h:600/w:567/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0MTI2/NzgwLTE3NDg2MDM3/NDktNjMwNy5qcGVn.jpeg","ean":"888072669802","qty":2},{"id":60,"title":"Mambo Diablo","artist":"Tito Puente & His Latin Ensemble, George Shearing","label":"Craft Recordings Latino","prijs":18.99,"inkoop":11.87,"genres":["Jazz","Latin"],"cover":"https://i.discogs.com/Al0p6IWzGJh8lJ45xWkZOrnDtmix3JzJ8MSIosqrr10/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI3MTMw/ODUxLTE2ODQ1ODcx/OTQtNDY4Mi5qcGVn.jpeg","ean":"8 88072 50343 4","qty":2},{"id":61,"title":"Hot Buttered Soul","artist":"Isaac Hayes","label":"Craft Recordings","prijs":27.99,"inkoop":17.49,"genres":["Soul"],"cover":"https://i.discogs.com/cOmK1wuwLb5m7u1knJ8Y5xiw3BUV_IPAxwv-VpHcNjk/rs:fit/g:sm/q:90/h:599/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTExNjM1/ODg1LTE3NDYzODY4/ODUtMTQ4Mi5qcGVn.jpeg","ean":"8 88072 02920 0","qty":1},{"id":62,"title":"Radio Music Society","artist":"Esperanza Spalding","label":"Craft Recordings","prijs":32.99,"inkoop":20.62,"genres":["Jazz","Soul"],"cover":"https://i.discogs.com/2nKgGuLA32W7Uws8vgpXt7-AjS5kOld3ZEA4Mhy4Lr0/rs:fit/g:sm/q:90/h:592/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI1MzU2/NzQyLTE3MzM2NTc5/ODgtMzMyOS5qcGVn.jpeg","ean":"888072452053","qty":1},{"id":63,"title":"Imidiwan: Companions","artist":"Tinariwen","label":"Craft Recordings","prijs":20.99,"inkoop":13.12,"genres":["Folk"],"cover":"https://i.discogs.com/IAQkWomy_QRJtwdOeUhI6jlpG6sZ3uzwOc2pmNXC26c/rs:fit/g:sm/q:90/h:600/w:596/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI1MDU3/NzIwLTE3NDMwMzU3/MjYtODcyMy5qcGVn.jpeg","ean":"888072419711","qty":3},{"id":64,"title":"The Twenty-Fifth Day Of December","artist":"The Staple Singers","label":"Craft Recordings","prijs":16.99,"inkoop":10.62,"genres":["Soul"],"cover":"https://i.discogs.com/xReBYH_4y4868hhG3JAZIGBxcQzVmb740GNNNCjE0tE/rs:fit/g:sm/q:90/h:600/w:596/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIxMTA5/NTc5LTE2Mzc3ODU4/NTAtNDM0Mi5qcGVn.jpeg","ean":"8 88072 19573 8","qty":4},{"id":65,"title":"Written In Their Soul (The Hits: The Stax Songwriter Demos)","artist":"Various","label":"Craft Recordings","prijs":20.99,"inkoop":13.12,"genres":["Soul"],"cover":"https://i.discogs.com/hAqEWgDGjpBwjEAQwlo4a4f7MgEhXSzyk2W5C8nP6_w/rs:fit/g:sm/q:90/h:595/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5MDEw/NTk4LTE3MDA4NjI2/MzAtNjU2NC5qcGVn.jpeg","ean":"888072474611","qty":1},{"id":66,"title":"Heart Of The Dragon","artist":"Lee Perry, The Upsetters","label":"Culture Factory","prijs":23.99,"inkoop":14.99,"genres":[],"cover":"https://i.discogs.com/qXLxd8Yaej8B35BaYdVYuYfAcehMGpPSSYypOHNjfwA/rs:fit/g:sm/q:90/h:587/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMwOTc3/MjcyLTE3MTg1Mzcy/MzUtNTQzMS5qcGVn.jpeg","ean":"3 700477 836566","qty":2},{"id":67,"title":"Hot Tracks","artist":"John Paul Hammond, The Nighthawks","label":"Culture Factory USA, Inc.","prijs":23.99,"inkoop":14.99,"genres":[],"cover":"https://i.discogs.com/e_CZRWWlcRWnT0GBDpYIhAMa7gvTuy7T738R_EF2D3w/rs:fit/g:sm/q:90/h:600/w:555/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMzNDcy/MTQyLTE3NDI1NjU3/MjktMzM4NC5qcGVn.jpeg","ean":"8 19514 01249 8","qty":2},{"id":68,"title":"Sentimental Fool","artist":"Lee Fields","label":"Daptone Recording Co.","prijs":25.99,"inkoop":16.24,"genres":["Soul"],"cover":"https://i.discogs.com/uPz8llsdnFZ60VaYvqZ_1nPOTO61t_WhgqsCupzMla0/rs:fit/g:sm/q:90/h:596/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0OTgx/OTEzLTE2NzA5MDYz/OTgtNzk2MC5qcGVn.jpeg","ean":"823134907515","qty":2},{"id":69,"title":"Hourglass","artist":"Antibalas","label":"Daptone Recording Co.","prijs":24.99,"inkoop":15.62,"genres":["Afrobeat","Jazz"],"cover":"https://i.discogs.com/kojTlaAXzzz8EoPDtHMyRC2NhqXKunyz0e_JEKpo9OU/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM1NTk4/NjcwLTE3NjI1NDk3/MzItODkwOC5qcGVn.jpeg","ean":"823134998117","qty":1},{"id":70,"title":"Nothing More To Say","artist":"The Frightnrs","label":"Daptone Records","prijs":24.99,"inkoop":15.62,"genres":[],"cover":"https://i.discogs.com/hpZQFJJs4LqN_HbSBUageo__yzKVnrtxhsXByiohkyc/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTg5Nzk4/ODMtMTQ3MjY2NTkx/Ny0zMDE4LmpwZWc.jpeg","ean":"823134004214","qty":1},{"id":71,"title":"16 Rayos","artist":"Orquesta Akok\u00e1n","label":"Daptone Records","prijs":24.99,"inkoop":15.62,"genres":["Latin"],"cover":"https://i.discogs.com/KLWGmoW-WJWhpNFX_RSeoZ3dSYKuYRIFZdqvjODMEgg/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIwNjkz/ODY5LTE2MzQ5NDM1/NTEtNTY0Ni5qcGVn.jpeg","ean":"8 23134 90641 9","qty":2},{"id":72,"title":"Long In The Tooth","artist":"The Budos Band","label":"Daptone Records","prijs":24.99,"inkoop":15.62,"genres":["Afrobeat","Funk","R&B"],"cover":"https://i.discogs.com/JHOpCQamhYN04XZe99c0VSu9w3Vb6WIN8bC1Y0Q3ass/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE2MDI0/MzU0LTE2NDE0MjY1/MzEtODUyNi5wbmc.jpeg","ean":"823134006515","qty":1},{"id":73,"title":"Vol 2: Baca Sewa","artist":"Cochemea Gastelum","label":"Daptone Records","prijs":24.99,"inkoop":15.62,"genres":["Folk","Jazz","Latin"],"cover":"https://i.discogs.com/a1be4mXwPjvSxOU6FReHay1u4Gb3P5CghIdbRR4ZjL8/rs:fit/g:sm/q:90/h:600/w:591/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE5NTA2/MDA3LTE2MzcxODQ2/NjUtNTI1OS5qcGVn.jpeg","ean":"823134906716","qty":1},{"id":74,"title":"If You Ask Me To... (Victor Axelrod Productions For Daptone Records)","artist":"Victor Axelrod","label":"Daptone Records","prijs":25.99,"inkoop":16.24,"genres":[],"cover":"https://i.discogs.com/7ciNGC5YhLvEF9Urlej6krcO-FT3rd0ubJPCk41m1VE/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI4MzUy/NDg1LTE2OTU2NjYw/MzktNTE0OC5qcGVn.jpeg","ean":"823134907010","qty":2},{"id":75,"title":"Brooklyn To Brooklin","artist":"Scone Cash Players","label":"Daptone Records","prijs":24.99,"inkoop":15.62,"genres":["Funk","Jazz","Soul"],"cover":"https://i.discogs.com/1NeB8IHEHWSnUno7SVrigC-PfwBe7AJRmgHySTdpoLA/rs:fit/g:sm/q:90/h:576/w:578/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0Mjg2/NTMyLTE2NjM0MDI1/NTgtOTIyNy5qcGVn.jpeg","ean":"8 23134 00731 4","qty":2},{"id":76,"title":"Come Around And Love Me","artist":"Jalen N'Gonda","label":"Daptone Records","prijs":25.99,"inkoop":16.24,"genres":["Soul"],"cover":"https://i.discogs.com/w8vUh3KLhxT3RpHCAHIKOBPBG6B6bmqNyXVsFE5xnjo/rs:fit/g:sm/q:90/h:594/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI4MTg2/MTIzLTE3MjQ0MjQz/NzItNTMwMS5qcGVn.jpeg","ean":"0823134007611","qty":1},{"id":77,"title":"Heartache In Room 14","artist":"The Altons","label":"Daptone Records","prijs":24.99,"inkoop":15.62,"genres":["Latin","Soul"],"cover":"https://i.discogs.com/P7MNSyhhWt-OhRCj9lMTgx3BLb7-0YMzatiEmYXuXcQ/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMzMTQx/NDQxLTE3Mzk5MjY0/NzctMzA3Ny5qcGVn.jpeg","ean":"823134907911","qty":1},{"id":78,"title":"Naturally","artist":"Sharon Jones & The Dap-Kings","label":"Daptone Records","prijs":37.99,"inkoop":23.74,"genres":["Funk","Soul"],"cover":"https://i.discogs.com/3VCgnDOsAAgsxQ33XqQoVhFrg-5RCRbkGn0dV0vc3tc/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMzOTMx/MDcxLTE3NDY5Nzk0/NjMtNDc0MS5qcGVn.jpeg","ean":"8 23134 90821 5","qty":2},{"id":79,"title":"In Search Of A Revival","artist":"The Olympians","label":"Daptone Records","prijs":24.99,"inkoop":15.62,"genres":["Soul"],"cover":"https://i.discogs.com/Ns2ABdF_IK5jOE9l9Q-a5uW1VBImMu6SeWNGL_gISJs/rs:fit/g:sm/q:90/h:600/w:599/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2MzQy/NzcyLTE3NzUwNzY5/NzItMzg4NS5qcGVn.jpeg","ean":"8 23134 09831 2","qty":3},{"id":80,"title":"Doctrine Of Love","artist":"Jalen N'Gonda","label":"Daptone Records","prijs":23.99,"inkoop":14.99,"genres":[],"cover":"https://i.discogs.com/aWqoIFLe7UGCyADQN9GfWvepWDze0iusDLl6qrJILzE/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM3NTE0/ODc0LTE3ODA3ODU2/MzMtNDQ0Mi5qcGVn.jpeg","ean":"823134008410","qty":6},{"id":81,"title":"Lila","artist":"Innov Gnawa","label":"Daptone Records","prijs":24.99,"inkoop":15.62,"genres":["Folk"],"cover":"https://i.discogs.com/fYbgo12LYqxunJ0G9nB8y9-JyTrGzWfcthvFmVnU3O0/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE4NDU4/ODM5LTE2MTkzNzU5/MTktNDYxNC5qcGVn.jpeg","ean":"823134005617","qty":1},{"id":82,"title":"Always","artist":"The Frightnrs","label":"Daptone Records","prijs":25.99,"inkoop":16.24,"genres":[],"cover":"https://i.discogs.com/ZUJR1wQ2MQyQyrrJqDTKvLKF23e7qTtmA28Wr32eR-o/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIzMjI2/NDczLTE3MzYzMjMw/MzktODExMS5qcGVn.jpeg","ean":"823134907119","qty":2},{"id":83,"title":"Got A Story To Tell","artist":"Thee Sacred Souls","label":"Daptone Records","prijs":22.99,"inkoop":14.37,"genres":["Soul"],"cover":"https://i.discogs.com/IFBy7NA97Jh23Ozob6XK0FrtExSbGOoQi67IOI4CLLE/rs:fit/g:sm/q:90/h:589/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxODg2/NTk2LTE3MjgwNDg4/MzctOTY4MS5qcGVn.jpeg","ean":"823134007819","qty":2},{"id":84,"title":"Encouraging Words","artist":"Billy Preston","label":"Dark Horse Records","prijs":30.99,"inkoop":19.37,"genres":["Funk","R&B","Soul"],"cover":"https://i.discogs.com/ZbtcnOK7ZI0RAykcNDdrODavD25FOakYpwc5uCrFMjM/rs:fit/g:sm/q:90/h:600/w:592/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2NzQx/NTc0LTE3NzMyMjY5/NDctMzc4MC5qcGVn.jpeg","ean":"4099964192780","qty":1},{"id":85,"title":"Texas Sun","artist":"Khruangbin, Leon Bridges","label":"Dead Oceans","prijs":22.99,"inkoop":14.37,"genres":["Soul"],"cover":"https://i.discogs.com/defWwMAYFZzVaDwsCfMTFxXNAz4Tbk8doqkFmdV2sZM/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE0NzU2/MDM3LTE1OTc1MTcx/MjMtNTg5My5wbmc.jpeg","ean":"656605151410","qty":1},{"id":86,"title":"Texas Moon","artist":"Khruangbin, Leon Bridges","label":"Dead Oceans","prijs":25.99,"inkoop":16.24,"genres":["Soul"],"cover":"https://i.discogs.com/tl2a0wvaU03h_i1RA9z9BCyvN--X9NUJuP3yZ8s22Us/rs:fit/g:sm/q:90/h:598/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0NDgz/NzQxLTE3NTE5ODQ1/ODktMzMyOS5qcGVn.jpeg","ean":"6 56605 15541 8","qty":2},{"id":87,"title":"Vagabonds Of The Western World","artist":"Thin Lizzy","label":"Decca","prijs":49.99,"inkoop":31.24,"genres":[],"cover":"https://i.discogs.com/S8bFFgQsKb7eNl_n_jNLa0A7c1ym9_gps6zbu2FuOTQ/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI4OTUz/MTcyLTE3MTk4NDA2/NjctNTY2OC5qcGVn.jpeg","ean":"602455875181","qty":1},{"id":88,"title":"The Secret To Life","artist":"FIZZ","label":"Decca","prijs":20.99,"inkoop":13.12,"genres":["Pop"],"cover":"https://i.discogs.com/qumArg8Tu8NouTFUvRN1V-V6eYX9lCHhIEeKpUsFv2c/rs:fit/g:sm/q:90/h:600/w:596/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI4OTQy/Mzc1LTE3MDA0MTg5/NDctOTIxNC5qcGVn.jpeg","ean":"6 02455 89442 7","qty":2},{"id":89,"title":"The Light For Days","artist":"Jacob Collier","label":"Decca (UMO)","prijs":32.99,"inkoop":20.62,"genres":["Folk","Jazz","Pop"],"cover":"https://i.discogs.com/Y52HvqWSoJ5O3aAzGZSAF0b-uD6Xu1zR9_jBAbg3h8Q/rs:fit/g:sm/q:90/h:600/w:583/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM1NDI1/ODI1LTE3Njg2NzA4/NDQtNzk1Ny5qcGVn.jpeg","ean":"602478838101","qty":2},{"id":90,"title":"Ye","artist":"Kanye West","label":"Def Jam Recordings","prijs":32.99,"inkoop":20.62,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/irG8DCbH2wUwxqn3OdNCxmkkkIfUkCesKOsUbFGrWFo/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE1Njg5/NDk4LTE1OTU5NTg2/NjEtMjE5NS5qcGVn.jpeg","ean":"6 02567 78469 2","qty":1},{"id":91,"title":"Swag","artist":"Justin Bieber","label":"Def Jam Recordings","prijs":42.99,"inkoop":26.87,"genres":["Neo-Soul","Pop"],"cover":"https://i.discogs.com/wIEU-l8k0P8Eer8CPVL9MZ0Hty63hfp0eDq1KiNm_Z8/rs:fit/g:sm/q:90/h:594/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM1Njc1/NTMzLTE3NjQ0NDc1/MDQtMzc4Ni5qcGVn.jpeg","ean":"6 02478 75051 9","qty":1},{"id":92,"title":"Sounds For Someone","artist":"Elmiene","label":"Def Jam Recordings","prijs":32.99,"inkoop":20.62,"genres":["Pop"],"cover":"","ean":"602488113984","qty":2},{"id":93,"title":"Exodus","artist":"DMX","label":"Def Jam Recordings","prijs":19.99,"inkoop":12.49,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/ny2zL3C17jvb47H9Xc7ywr8GXSb42ij_G7HNjST1xZY/rs:fit/g:sm/q:90/h:596/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIwOTQx/NTg1LTE3MjAyNTc4/MDItNDk3NC5qcGVn.jpeg","ean":"6 02438 26134 5","qty":2},{"id":94,"title":"Jesus Is King","artist":"Kanye West","label":"Def Jam Recordings","prijs":43.99,"inkoop":27.49,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/Nfh6tFiFoVfnVW6pj0cK2G4A9bs7S3V3bW4o4UAzrak/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE1MTYz/MzYwLTE1ODg0MTYy/MDctNDM3Ni5qcGVn.jpeg","ean":"6 02508 46466 9","qty":1},{"id":95,"title":"Spatial, No Problem.","artist":"Lee Perry, Mouse On Mars","label":"Domino","prijs":29.99,"inkoop":18.74,"genres":["Electro"],"cover":"https://i.discogs.com/hTQfGhGks1mL5tbS1Z8gSFlFCqLLskrZtkxhYOEB_hE/rs:fit/g:sm/q:90/h:577/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM3NTE1/ODY3LTE3ODA0MTU5/NTItMTI3Mi5qcGVn.jpeg","ean":"887828054831","qty":2},{"id":96,"title":"No Time For Dreaming","artist":"Charles Bradley, Menahan Street Band","label":"Dunham","prijs":24.99,"inkoop":15.62,"genres":["R&B","Soul"],"cover":"https://i.discogs.com/99gJ_RZb0BzF4Wbh_8-YzVjc1abqqg7evSOZEZoS6tU/rs:fit/g:sm/q:90/h:470/w:480/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0NTY3/MDMyLTE2NjM2MTQx/NTUtNDU5MS5qcGVn.jpeg","ean":"823134002210","qty":3},{"id":97,"title":"The Exciting Sounds Of Menahan Street Band","artist":"Menahan Street Band","label":"Dunham","prijs":24.99,"inkoop":15.62,"genres":["Afrobeat","Funk","Soul"],"cover":"https://i.discogs.com/jywb0jMFFS4D_iXj7ZdBpOhME-Vd9Fh3id3QVXfDnS4/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE3NTA4/NjI4LTE2NjA0NjE3/NDctMTM5Ny5qcGVn.jpeg","ean":"823134006317","qty":1},{"id":98,"title":"Changes","artist":"Charles Bradley","label":"Dunham","prijs":24.99,"inkoop":15.62,"genres":["Soul"],"cover":"https://i.discogs.com/mEsV69JnvcRnD12u582Gkhku6VHsFWLPWLyHOavXWhI/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0NTY2/NjYzLTE2NjUyMTUw/NTMtMTE3NC5qcGVn.jpeg","ean":"8 23134 00411 5","qty":3},{"id":99,"title":"Black Velvet","artist":"Charles Bradley","label":"Dunham","prijs":24.99,"inkoop":15.62,"genres":["Funk","R&B","Soul"],"cover":"https://i.discogs.com/VNJ4tCqn7j5Ze05RggDkft-QA9ZNjSgZwP-_YeW1MHI/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyNzY3/MzcxLTE1NDE2MDM0/MDctNDg5Mi5qcGVn.jpeg","ean":"823134005419","qty":2},{"id":100,"title":"Victim Of Love","artist":"Charles Bradley, Menahan Street Band","label":"Dunham","prijs":24.99,"inkoop":15.62,"genres":["R&B","Soul"],"cover":"https://i.discogs.com/H53wgB0TDIGa58ClSj6YOjGJGBZUMx8ay2NUJkJ1Ahw/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0NzU1/OTU3LTE2NjUyMTY1/MTUtMjEwMS5qcGVn.jpeg","ean":"8 23134 00311 8","qty":2},{"id":101,"title":"Yellow Peril","artist":"Nat Myers","label":"Easy Eye Sound","prijs":17.99,"inkoop":11.24,"genres":[],"cover":"https://i.discogs.com/kY0yG1G9N1Z9DU_Ayv-xL22kklmvtE_oCQejrI7K8yc/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI3NTMw/Njc5LTE2OTQyOTUz/NjUtNTQ1Mi5qcGVn.jpeg","ean":"888072481459","qty":1},{"id":102,"title":"Tell Everybody! (21st Century Juke Joint Blues From Easy Eye Sound)","artist":"Various","label":"Easy Eye Sound","prijs":16.99,"inkoop":10.62,"genres":["Folk","R&B","Soul"],"cover":"https://i.discogs.com/0o88vKb1CDEkfnyCuZTJtjkH0fXf2w349K7dX0wGTyA/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI3OTUx/NTQzLTE2OTE4Mzg3/MDQtMjY3Ny5qcGVn.jpeg","ean":"8 88072 52853 6","qty":1},{"id":103,"title":"When Disaster Strikes...","artist":"Busta Rhymes","label":"Elektra","prijs":28.99,"inkoop":18.12,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/85okFqYktrcXykzBeAJAz4M1GZHkdYn8Qe1qXeQct90/rs:fit/g:sm/q:90/h:600/w:598/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI4MjY5/MTkzLTE2OTQ4Mzg4/NTMtNjI5OC5qcGVn.jpeg","ean":"6 03497 84130 1","qty":2},{"id":104,"title":"Therapy","artist":"Zoe Wees","label":"EMI","prijs":17.99,"inkoop":11.24,"genres":["Pop"],"cover":"https://i.discogs.com/1IoFIfbREl93zsXDveLJjYahDxs9UbqOBZgtFwVJeFw/rs:fit/g:sm/q:90/h:450/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI4ODA4/MjE1LTE2OTkxODQ4/MjAtNTI5OC5qcGVn.jpeg","ean":"0602458116243","qty":1},{"id":105,"title":"Messy","artist":"Olivia Dean","label":"EMI","prijs":32.99,"inkoop":20.62,"genres":["Pop"],"cover":"https://i.discogs.com/TLdAwXBgrxUJ3lyBYwTmngBtdbceq5OnNW-g8Fpmh3k/rs:fit/g:sm/q:90/h:600/w:598/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI3NTM1/MjEyLTE3NzEyNzA2/ODctMjg5Ni5qcGVn.jpeg","ean":"6 02455 21589 5","qty":1},{"id":106,"title":"You Can't Steal My Joy","artist":"Ezra Collective","label":"Enter The Jungle Records","prijs":31.99,"inkoop":19.99,"genres":["Afrobeat","Jazz"],"cover":"https://i.discogs.com/e4-VcJUBZlVCfWe6sN74Xobq7SQ5-N-A1zCBlLb-7KE/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEzNTU1/NDM2LTE2Njk3MTcy/ODMtMTM2NC5qcGVn.jpeg","ean":"193483466835","qty":1},{"id":107,"title":"Juan Pablo The Philosopher","artist":"Ezra Collective","label":"Enter The Jungle Records","prijs":25.99,"inkoop":16.24,"genres":["Afrobeat","Jazz"],"cover":"https://i.discogs.com/K5Q4XFDYjvhEAQGgSpTYzgRVdAbckgbulQpJSbuut5A/rs:fit/g:sm/q:90/h:500/w:500/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTExOTc2/OTkyLTE1MjU4Njc5/MTktNjk1NS5qcGVn.jpeg","ean":"6 89492 18541 1","qty":1},{"id":108,"title":"Black Moses","artist":"Isaac Hayes","label":"Enterprise","prijs":27.99,"inkoop":17.49,"genres":["Soul"],"cover":"https://i.discogs.com/ak4WYem71rOcdijscbOhC9ddgiMVBveci87jT1iNWb8/rs:fit/g:sm/q:90/h:600/w:593/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI4ODI1/ODA3LTE3Mzc0Nzkw/NzItMjA1OC5qcGVn.jpeg","ean":"888072359017","qty":1},{"id":109,"title":"What Happened To The Streets?","artist":"21 Savage","label":"Epic Records","prijs":41.99,"inkoop":26.24,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/cbWJnMSGGjQION_so4NL26T7FDV5T2-H9MIEum4Z1HM/rs:fit/g:sm/q:90/h:591/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM3NTIy/MTI1LTE3ODA0ODEw/NDMtMzk2OS5qcGVn.jpeg","ean":"1 99584 03371 6","qty":4},{"id":110,"title":"There's A Riot Goin' On","artist":"Sly & The Family Stone","label":"Epic","prijs":24.99,"inkoop":15.62,"genres":["Funk","R&B","Soul"],"cover":"https://i.discogs.com/8338ErHda9MICkgCQ10LZ4UXwqULCg9ZJJv3-SWAGaw/rs:fit/g:sm/q:90/h:600/w:595/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIxMzA4/ODMzLTE2NTUzODkz/NzctNzMzOC5qcGVn.jpeg","ean":"1 9439-90435-1 6","qty":2},{"id":111,"title":"Tyla","artist":"Tyla","label":"Epic","prijs":24.99,"inkoop":15.62,"genres":["Pop"],"cover":"https://i.discogs.com/BrPZ2L8wQV3d2NDC7ZHDZQvTC3Uj1cNr3D1Sf9SM118/rs:fit/g:sm/q:90/h:590/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMwMTcw/MzA2LTE3NDc0NzM4/MDgtNjc2OC5qcGVn.jpeg","ean":"1 96588 76921 4","qty":2},{"id":112,"title":"Jaco Pastorius","artist":"Jaco Pastorius","label":"Epic","prijs":25.99,"inkoop":16.24,"genres":["Jazz"],"cover":"https://i.discogs.com/rzfhSFOfK3OsJRoQtjk4ub6TfkXnvvovipO3k7wrl-4/rs:fit/g:sm/q:90/h:600/w:597/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI1MDYy/NjEtMTc2NTc0NzAw/MS02MTk5LmpwZWc.jpeg","ean":"8713748980467","qty":2},{"id":113,"title":"Promise","artist":"Sade","label":"Epic","prijs":24.99,"inkoop":15.62,"genres":["Jazz","Pop","Soul"],"cover":"https://i.discogs.com/oj8qPEIqNCatItg5e2bmbbEJkBtqXLStANwVxyNovvU/rs:fit/g:sm/q:90/h:598/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxMDE5/MzA4LTE3NDM3NTY0/NzQtNTY3NS5qcGVn.jpeg","ean":"196587848118","qty":1},{"id":114,"title":"Stronger Than Pride","artist":"Sade","label":"Epic","prijs":24.99,"inkoop":15.62,"genres":["Jazz"],"cover":"https://i.discogs.com/RODIoc-YKgLB-CGFnAmnS11jDa_m9QuU8pfx9i3ms6Y/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxMDE5/Mzg2LTE3NDM3NTY1/NDYtMTk2MC5qcGVn.jpeg","ean":"196587848217","qty":1},{"id":115,"title":"Spirits","artist":"Togo All Stars","label":"Excelsior Recordings","prijs":8.99,"inkoop":5.62,"genres":["Afrobeat","Folk"],"cover":"https://i.discogs.com/s-ibGogGY5rNJT1ZBOAOedK_-PscQGgpZ9iaYSvhcoI/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5MTEy/NTg2LTE3MDE3MzE4/ODMtOTQzOC5qcGVn.jpeg","ean":"8714374967549","qty":3},{"id":116,"title":"Axis: Bold As Love","artist":"The Jimi Hendrix Experience","label":"Experience Hendrix","prijs":29.99,"inkoop":18.74,"genres":[],"cover":"https://i.discogs.com/RAhPSwO2JS407DWfcn7FOc5qz8Mco3gAL5CpysGZOWQ/rs:fit/g:sm/q:90/h:600/w:598/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTExMDg0/OTk1LTE1MDk1Njc1/NTMtNzk4OC5qcGVn.jpeg","ean":"8 88751 34521 8","qty":1},{"id":117,"title":"Mutt Deluxe: Heel","artist":"Leon Thomas III","label":"EZMNY Records","prijs":42.99,"inkoop":26.87,"genres":[],"cover":"https://i.discogs.com/1F4ypajQIrt0Emc4UPi0bMVQLqKF9OTN8vxYgwVRGck/rs:fit/g:sm/q:90/h:500/w:500/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0ODg2/NTg4LTE3NTU4NDQy/MDAtNDU4My5qcGVn.jpeg","ean":"6 02478 13345 9","qty":1},{"id":118,"title":"Riot!","artist":"Joe Bataan","label":"Fania Records","prijs":32.99,"inkoop":20.62,"genres":["Latin"],"cover":"https://i.discogs.com/scwlobyNIw8iDB_qC7M1scQNjcnPXIlfBptYDFX6bLI/rs:fit/g:sm/q:90/h:593/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMyNDYz/NzM4LTE3MzY3ODU1/MjItMTY0My5qcGVn.jpeg","ean":"8 88072 62180 0","qty":2},{"id":119,"title":"I Am The Moon: IV. Farewell","artist":"Tedeschi Trucks Band","label":"Fantasy","prijs":15.99,"inkoop":9.99,"genres":[],"cover":"https://i.discogs.com/XNiOUwOEM74q9AladRUUB6yYE9PhNbYMZldaPqEfOug/rs:fit/g:sm/q:90/h:600/w:599/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0NDgw/NDY0LTE2NjM1OTA3/OTctNDQwNy5qcGVn.jpeg","ean":"8 88072 43449 3","qty":1},{"id":120,"title":"Fun Machine: The Sequel","artist":"Lake Street Dive","label":"Fantasy","prijs":20.99,"inkoop":13.12,"genres":["Pop"],"cover":"https://i.discogs.com/sxDExO4SSrrkYjzsNFUWukx189FgA4JgBXv6NzTPQXc/rs:fit/g:sm/q:90/h:600/w:597/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI1ODA0/NDUzLTE2NzQwNDM0/ODAtMzc0MC5qcGVn.jpeg","ean":"888072461420","qty":1},{"id":121,"title":"I Am The Moon: II. Ascension","artist":"Tedeschi Trucks Band","label":"Fantasy","prijs":20.99,"inkoop":13.12,"genres":[],"cover":"https://i.discogs.com/-RfZXqo75Shr78YrQNSR2QWCVaqihuDNenIqYsT4LII/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0NDgw/NDAxLTE2NjI5ODkx/NDgtNTE3OS5qcGVn.jpeg","ean":"8 88072 43443 1","qty":1},{"id":122,"title":"I Am The Moon: III. The Fall","artist":"Tedeschi Trucks Band","label":"Fantasy","prijs":20.99,"inkoop":13.12,"genres":["R&B"],"cover":"https://i.discogs.com/dWrpn1rgDNcv6bRFJpXIJQqY92GPhHiH99iV8eHjTio/rs:fit/g:sm/q:90/h:600/w:599/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0NDgw/NDk0LTE2NjM1ODk4/MTgtMjg4MC5qcGVn.jpeg","ean":"8 88072 43447 9","qty":1},{"id":123,"title":"Rising Son","artist":"Takuya Kuroda","label":"First Word Records","prijs":37.99,"inkoop":23.74,"genres":["Afrobeat","Jazz"],"cover":"https://i.discogs.com/P7X39aLvE1kW6QbdohCzIjmAFk8NnstT8sbvJweLuyE/rs:fit/g:sm/q:90/h:600/w:556/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5NjU3/MDk1LTE3MTE4MDY4/ODctMjU3OC5qcGVn.jpeg","ean":"5050580815933","qty":1},{"id":124,"title":"Samurai Champloo Music Record - Departure","artist":"Nujabes, Fat Jon","label":"Flying Dog","prijs":57.99,"inkoop":36.24,"genres":["Electro","RAP / HIP HOP"],"cover":"https://i.discogs.com/T2o2aHEXGDr2Kejjv_TU6iu85mDwv7zKnJ9eWctWKpg/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIzMDI3/MDY2LTE2NjczNTEy/ODctNTkwNS5qcGVn.jpeg","ean":"4582575385752","qty":1},{"id":125,"title":"Heaven","artist":"Cleo Sol","label":"Forever Living Originals","prijs":51.99,"inkoop":32.49,"genres":["Latin","Neo-Soul","Soul"],"cover":"https://i.discogs.com/4Y_SjhwjwqCWuU9F9vwB9HRWvVfW-_U_KnCWRQ0YskU/rs:fit/g:sm/q:90/h:600/w:599/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5NTQ0/MzQwLTE3MDU5NTA5/ODItNDE0MC5qcGVn.jpeg","ean":"7 12221 01789 6","qty":5},{"id":126,"title":"Gold","artist":"Cleo Sol","label":"Forever Living Originals","prijs":51.99,"inkoop":32.49,"genres":["Neo-Soul"],"cover":"https://i.discogs.com/yxkojA51wXTisIsCsEdLRBt4fWE6pxxEsxoH-oPYCMM/rs:fit/g:sm/q:90/h:553/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5NTYw/NzU2LTE3MDc5NjIw/MjQtNzM1Ny5qcGVn.jpeg","ean":"712221017919","qty":3},{"id":127,"title":"10","artist":"Sault","label":"Forever Living Originals","prijs":31.99,"inkoop":19.99,"genres":["Neo-Soul"],"cover":"https://i.discogs.com/KXIWinxj-oljIN-xYfr_kwZjRxwW4MXEMUBqrLPtvww/rs:fit/g:sm/q:90/h:593/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0NzY2/MDU0LTE3NTU1MTc3/ODItODA4NC5qcGVn.jpeg","ean":"712221017964","qty":3},{"id":128,"title":"Chapter 1","artist":"Sault","label":"Forever Living Originals","prijs":33.99,"inkoop":21.24,"genres":["Neo-Soul"],"cover":"https://i.discogs.com/U_fCu6MIJbiDXhL9eg2BJW3JipU0xwIZReqGAIG7zCc/rs:fit/g:sm/q:90/h:576/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM3MDgy/MTQ4LTE3NzY0Mjkz/MjYtODU2Ny5qcGVn.jpeg","ean":"0712221018008","qty":2},{"id":129,"title":"Untitled (Rise)","artist":"Sault","label":"Forever Living Originals","prijs":44.99,"inkoop":28.12,"genres":["Funk","Soul"],"cover":"https://i.discogs.com/P7dfPpjyfWdOG4ff56KaZ1Q-bstP1vPOLQ-XNAbVS7E/rs:fit/g:sm/q:90/h:596/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE2MTQx/NjAwLTE2NDU2ODk3/NjEtNzg5MS5qcGVn.jpeg","ean":"712221 017667","qty":1},{"id":130,"title":"Mother","artist":"Cleo Sol","label":"Forever Living Originals","prijs":63.99,"inkoop":39.99,"genres":["Neo-Soul"],"cover":"https://i.discogs.com/hfBCuek2a7Snc9qzXzhAb_FkVPiYG58ZthrXH5Saqfc/rs:fit/g:sm/q:90/h:600/w:588/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMzNDQ3/MDE3LTE3NTIzMzE3/MDMtNjMyNC5qcGVn.jpeg","ean":"0 712221 017681","qty":2},{"id":131,"title":"Air","artist":"Sault","label":"Forever Living Originals","prijs":41.99,"inkoop":26.24,"genres":[],"cover":"https://i.discogs.com/MVEM8BCtdX6DQnXebwn3UtJ4Ftv41inw9yFFv65M08U/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0MDI3/ODE1LTE2Njg5NTE3/NjktODkxOC5qcGVn.jpeg","ean":"0 712221 017773","qty":1},{"id":132,"title":"11","artist":"Sault","label":"Forever Living Originals","prijs":31.99,"inkoop":19.99,"genres":["Funk","Soul"],"cover":"https://i.discogs.com/XK_auMQKeWsR6FUF97VDJDqSGpekhrgPeMEeoBExCTY/rs:fit/g:sm/q:90/h:592/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI2ODMw/MzEzLTE2ODI2Nzg0/NDAtODI3Mi5qcGVn.jpeg","ean":"7 12221 01779 7","qty":1},{"id":133,"title":"Like Water For Chocolate","artist":"Common","label":"Geffen Records","prijs":38.99,"inkoop":24.37,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/bb_QeqqFxg9Wd9mdxur_mi4aCArCx76ddd7mJEqEopQ/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI4MTEx/ODM3LTE2OTMzODkx/NTYtMzQxNS5qcGVn.jpeg","ean":"602547148612","qty":1},{"id":134,"title":"Djesse Vol. 1","artist":"Jacob Collier, Metropole Orchestra, Jules Buckley","label":"Geffen Records","prijs":20.99,"inkoop":13.12,"genres":["Jazz"],"cover":"https://i.discogs.com/7jMIlV9wSzv70BznnkJ0p3-Kxr5BsKS51oxC9uuJ_cc/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI4MjY0/OTQ4LTE2OTQ3MzEw/MzctODM4Mi5qcGVn.jpeg","ean":"6 02455 52715 8","qty":2},{"id":135,"title":"Liquid Swords","artist":"The Genius, GZA","label":"Geffen Records","prijs":42.99,"inkoop":26.87,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/F6S21K5rwscxtw3NieVTXLkBXco3dTPzZB1pgbw0TyM/rs:fit/g:sm/q:90/h:598/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMzMzg0/MTQ2LTE3NDE3NzAz/NTktODk4MS5qcGVn.jpeg","ean":"6 02567 92625 2","qty":1},{"id":136,"title":"A\u015fk","artist":"Alt\u0131n G\u00fcn","label":"Glitterbeat","prijs":25.99,"inkoop":16.24,"genres":["Folk","Funk","Pop"],"cover":"https://i.discogs.com/zHzMUF4VYizc5Awat6l-oUX7SBnA5y6XE9o1rI6kQPM/rs:fit/g:sm/q:90/h:592/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI2NTk1/MzQ3LTE2ODQxNzY4/NjctNDI3OC5qcGVn.jpeg","ean":"4030433613818","qty":2},{"id":137,"title":"Mount Matsu","artist":"Y\u012aN Y\u012aN","label":"Glitterbeat","prijs":24.99,"inkoop":15.62,"genres":["Folk","Funk"],"cover":"https://i.discogs.com/9Sv5gpthN0ddzI8-JBvp9Lbepq7HCDYQ-Sl7ivBNsfM/rs:fit/g:sm/q:90/h:564/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5MjA5/NjMzLTE3MDI2NTEy/MDctNzU2Mi5qcGVn.jpeg","ean":"4030433614716","qty":2},{"id":138,"title":"Gece","artist":"Alt\u0131n G\u00fcn","label":"Glitterbeat","prijs":25.99,"inkoop":16.24,"genres":["Folk","Funk"],"cover":"https://i.discogs.com/ooFgftMTZ603mFcDsfxPuYcuumr8qr3XYBY5aQQA5MQ/rs:fit/g:sm/q:90/h:600/w:599/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEzNDQw/MzI0LTE2MTkyNjQ4/OTAtODMxOC5qcGVn.jpeg","ean":"4 030433 607213","qty":1},{"id":139,"title":"Yatta!","artist":"Y\u012aN Y\u012aN","label":"Glitterbeat","prijs":26.99,"inkoop":16.87,"genres":["Folk","Funk"],"cover":"https://i.discogs.com/V4OD6xd2b7KXjQa53YRPn-wdilvMaBOXN63_ewCC_fM/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2MjY2/NjQ3LTE3Njg5MTUw/MDEtMTUzMi5qcGVn.jpeg","ean":"4030433618110","qty":2},{"id":140,"title":"Garip","artist":"Alt\u0131n G\u00fcn","label":"Glitterbeat","prijs":27.99,"inkoop":17.49,"genres":["Folk"],"cover":"https://i.discogs.com/nZTfoUZ0-pkMByBDsNlMxY4hGS54tj7auHUjwWcfAYk/rs:fit/g:sm/q:90/h:600/w:597/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2NTAx/MjExLTE3NzEwNzAx/MDItMTYxNy5qcGVn.jpeg","ean":"4030433618264","qty":1},{"id":141,"title":"Street Songs","artist":"Rick James","label":"Gordy","prijs":22.99,"inkoop":14.37,"genres":["Funk"],"cover":"https://i.discogs.com/hprLFeLl-JUDb2rNJeILEdlZ8a7nKHt8c3lpae7v02c/rs:fit/g:sm/q:90/h:600/w:599/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2Mzkz/ODctMTY5ODgwOTc5/NS0zOTY2LmpwZWc.jpeg","ean":"600753160107","qty":1},{"id":142,"title":"Somni","artist":"Snarky Puppy, Metropole Orchestra","label":"GroundUP Music (2)","prijs":56.99,"inkoop":35.62,"genres":["Jazz"],"cover":"https://i.discogs.com/t36bfie-kiR52Faux2v9JUzoRGLmz0qY66bOeWwnOxo/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM1NzQx/MjA2LTE3NjM4OTg2/ODYtOTQ3OC5qcGVn.jpeg","ean":"199350770517","qty":1},{"id":143,"title":"Half Mile Harvest","artist":"The Teskey Brothers","label":"Half Mile Harvest Recordings","prijs":32.99,"inkoop":20.62,"genres":[],"cover":"https://i.discogs.com/W5kgIyxt89MqHzcw4nDulOZaILsA-k4aY4MCud6B-Qg/rs:fit/g:sm/q:90/h:593/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEzNzkz/MDM1LTE1NjEyODc5/NTgtMTA5OC5qcGVn.jpeg","ean":"602567984139","qty":1},{"id":144,"title":"Find A Way","artist":"Matt Wilde","label":"Hello World Records","prijs":32.99,"inkoop":20.62,"genres":["Jazz"],"cover":"https://i.discogs.com/LCdXLSt9JcCEyPRj1Ss9NC1ExVbos3iEgb-SBOFIb7M/rs:fit/g:sm/q:90/h:576/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM1NDAx/MjczLTE3NjA3MTc4/NzctMTQxMS5qcGVn.jpeg","ean":"5050580855458","qty":2},{"id":145,"title":"This Music May Contain Hope.","artist":"Raye","label":"Human Re Sources","prijs":38.99,"inkoop":24.37,"genres":["Jazz"],"cover":"https://i.discogs.com/iwJF6BQKB2fCiFz8-Cf1akf8YqQG6Hr6h0LIrcdfCSI/rs:fit/g:sm/q:90/h:593/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2ODc1/MTc5LTE3NzQ2OTQ5/MTctMzk5Ny5qcGVn.jpeg","ean":"1 99806 98333 1","qty":3},{"id":146,"title":"Perceive Its Beauty, Acknowledge Its Grace","artist":"Shabaka Hutchings","label":"Impulse!","prijs":22.99,"inkoop":14.37,"genres":["Jazz"],"cover":"https://i.discogs.com/Vv1yrfr37FOo1ZZ56wVYbgbNF86Zx15HKCKNLZ6HRL8/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMwMzc5/NjY0LTE3MTI5NDM1/OTAtNDI0OS5qcGVn.jpeg","ean":"602465043112","qty":3},{"id":147,"title":"We Are Lagos In Paris","artist":"Lagos In Paris","label":"Inside Records (75)","prijs":28.99,"inkoop":18.12,"genres":["Afrobeat","Electro","Folk","Jazz"],"cover":"https://i.discogs.com/QibHQJcV4-mD12zr5xmvx2grcKTc68rknHuu24Nn0s4/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2NTQ5/NDUxLTE3NzE0OTM0/NTEtMTg1My5qcGVn.jpeg","ean":"3700398738734","qty":3},{"id":148,"title":"All Eyez On Me","artist":"2Pac","label":"Interscope Records","prijs":76.99,"inkoop":48.12,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/yyApPF4T5s2_RiY7K4qLsbL1ttQMx-JGD6gplCf840E/rs:fit/g:sm/q:90/h:599/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI1MTE5/MjExLTE2NjgzNzMw/NTQtMzU2MC5qcGVn.jpeg","ean":"6 02448 27626 1","qty":2},{"id":149,"title":"Access All Areas","artist":"FLO","label":"Island Records","prijs":29.99,"inkoop":18.74,"genres":["Pop"],"cover":"https://i.discogs.com/LeBaoP7lqSya_HPwmCfy7FwgHOY5rSny9ZunF5UWfCw/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMyMTYw/MDA5LTE3MzU1MTI4/MTUtMzEzNy5qcGVn.jpeg","ean":"602465364460","qty":1},{"id":150,"title":"Those Days Are Over","artist":"WILSN","label":"Ivy League","prijs":32.99,"inkoop":20.62,"genres":[],"cover":"https://i.discogs.com/TZb7uNr-cowpBAeZye07OYtheEb0zfqEwMRLxKM-DXw/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI1OTcy/NjA5LTE2NzU4MzY4/NDktNzkxMC5qcGVn.jpeg","ean":"9341004089075","qty":1},{"id":151,"title":"The Circle Session","artist":"The Teskey Brothers","label":"Ivy League","prijs":20.99,"inkoop":13.12,"genres":["R&B"],"cover":"https://i.discogs.com/0pDotYbc9EGciXr1V7iF97jbdtP94xaQNKhsc076j0c/rs:fit/g:sm/q:90/h:600/w:594/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMwNDQx/OTA1LTE3MTM1Mzcw/NDgtMzc2NS5qcGVn.jpeg","ean":"6 02465 06968 6","qty":2},{"id":152,"title":"Unplugged","artist":"Alicia Keys","label":"J Records","prijs":32.99,"inkoop":20.62,"genres":["RAP / HIP HOP","Soul"],"cover":"https://i.discogs.com/XmKJ0TMVXqtY5a-52e3GIuJjF6Rv3oZwd2ywLHDh5yk/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM1Mjcw/NTUxLTE3NTk0OTAw/MTktNzM0NS5qcGVn.jpeg","ean":"198029097511","qty":1},{"id":153,"title":"The Low End Theory","artist":"A Tribe Called Quest","label":"Jive","prijs":29.99,"inkoop":18.74,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/zbRW-TTi-ixNJODQhEc1CdU3LS65xHXiJb37JupqfMI/rs:fit/g:sm/q:90/h:595/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxNDMw/ODI1LTE3MzcxMzAw/MDYtOTc4MC5qcGVn.jpeg","ean":"196588848711","qty":1},{"id":154,"title":"The Anthology","artist":"A Tribe Called Quest","label":"Jive","prijs":29.99,"inkoop":18.74,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/rlBDGWsxOipaR6NL37pKt6ofo0AFngAj2ENP7C3IaoE/rs:fit/g:sm/q:90/h:592/w:593/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxNDE1/MjI4LTE3MjI5NDgw/NTYtNjc2Ny5qcGVn.jpeg","ean":"1 96588 86461 2","qty":1},{"id":155,"title":"Super Takanaka Live! = \u30b9\u30fc\u30d1\u30fc\u9ad8\u4e2d\u30e9\u30a4\u30d6\uff01","artist":"Masayoshi Takanaka, Masayoshi Takanaka","label":"Kitty Records","prijs":40.99,"inkoop":25.62,"genres":["Jazz"],"cover":"https://i.discogs.com/yl_SqJtW5ca2fODgnBuQLO5nOHm4ZnJRtWe7Zfo4ShE/rs:fit/g:sm/q:90/h:589/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxNDEy/NDQ0LTE3MjMxNDUw/ODUtOTUwNi5qcGVn.jpeg","ean":"4988031637456","qty":1},{"id":156,"title":"Zombie","artist":"Fela Kuti, Africa 70","label":"Knitting Factory Records","prijs":27.99,"inkoop":17.49,"genres":["Afrobeat","Folk","Jazz"],"cover":"https://i.discogs.com/-e-day0yFc-dvic4DlTWmBSTtA3kpKsd2WlII5ZLmHs/rs:fit/g:sm/q:90/h:599/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE0NTc5/ODI0LTE1Nzc1Mzky/NjItMTg0OC5qcGVn.jpeg","ean":"7 2084120611 8","qty":1},{"id":157,"title":"Music Of Many Colours","artist":"Fela Kuti, Roy Ayers","label":"Knitting Factory Records","prijs":27.99,"inkoop":17.49,"genres":["Afrobeat","Folk","Jazz"],"cover":"https://i.discogs.com/0hr9Hc52kiRUUp0OE97pa0V-PVikOxurYgLrKttHXCc/rs:fit/g:sm/q:90/h:600/w:598/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE0NDUx/MDcwLTE3NzI0Mjc4/MzUtNzU4Ny5qcGVn.jpeg","ean":"7 20841 11431 4","qty":2},{"id":158,"title":"Original Suffer Head","artist":"Fela Kuti, Egypt 80","label":"Knitting Factory Records","prijs":26.99,"inkoop":16.87,"genres":["Afrobeat","Funk","Jazz"],"cover":"https://i.discogs.com/1RE-nyH5bMi3Q-qrrTk24cjN19P9p4OUDydd2BrtbMw/rs:fit/g:sm/q:90/h:596/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5ODk2/MTIzLTE3MTA5NzU4/OTUtNjExMy5qcGVn.jpeg","ean":"720841205234","qty":2},{"id":159,"title":"Why Black Man Dey Suffer.......","artist":"Fela Kuti, Africa 70, Ginger Baker","label":"Knitting Factory Records","prijs":25.99,"inkoop":16.24,"genres":["Afrobeat","Folk","Jazz"],"cover":"https://i.discogs.com/PUV4mcwJsXAN-BWQl2pJ8iwblPZ8UXbJRH2DzWRE3nY/rs:fit/g:sm/q:90/h:598/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5NjQ1/NTcyLTE3MDgzNDE3/NjQtNzc1Ny5qcGVn.jpeg","ean":"7 20841 20723 8","qty":2},{"id":160,"title":"Excuse O","artist":"Fela Kuti, Africa 70","label":"Knitting Factory Records","prijs":25.99,"inkoop":16.24,"genres":["Afrobeat"],"cover":"https://i.discogs.com/9k6SLRgOrpw4pAli-W83l7CVBsms7P78pLgUJ6EFCVc/rs:fit/g:sm/q:90/h:600/w:594/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5NjQ0/NzY1LTE3MDgyNzc5/ODctOTY2MS5qcGVn.jpeg","ean":"7 20841 20743 6","qty":2},{"id":161,"title":"Noise For Vendor Mouth","artist":"Fela Kuti, Africa 70","label":"Knitting Factory Records","prijs":25.99,"inkoop":16.24,"genres":["Afrobeat","Folk","Jazz"],"cover":"https://i.discogs.com/LAkMaH_Ozwr_KRTe0vU1sgPGD6KBGp9YqDDMulyhT_s/rs:fit/g:sm/q:90/h:600/w:598/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5NjQ0/NjI3LTE3MDgzNjU3/OTItMTc2MS5qcGVn.jpeg","ean":"7 20841 20793 1","qty":2},{"id":162,"title":"Stankonia","artist":"OutKast","label":"LaFace Records","prijs":29.99,"inkoop":18.74,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/ZP5ufYnEeQ3seqEB3KulbGdGk_RFqGXC40tIcEKy0zY/rs:fit/g:sm/q:90/h:594/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxNDMx/MzE0LTE3NjMyMjk5/NzktODQ1Mi5qcGVn.jpeg","ean":"1 9658884861 2","qty":2},{"id":163,"title":"Confessions","artist":"Usher","label":"LaFace Records","prijs":39.99,"inkoop":24.99,"genres":["Pop","RAP / HIP HOP"],"cover":"https://i.discogs.com/QZ4-D4T97OFq62_Zx64_R_Z1u6l4r1-VSYlwPw072j4/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMyMzg4/NTA0LTE3MzI0Nzg3/MTgtNzU0My5qcGVn.jpeg","ean":"198028267915","qty":1},{"id":164,"title":"My Way","artist":"Usher","label":"LaFace Records","prijs":32.99,"inkoop":20.62,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/KZa3vVfsHXw1F0ZhsPKX6ZXLbGHCXOA5yu8cH8qGfpo/rs:fit/g:sm/q:90/h:594/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI4NDgz/NjEyLTE2OTY4NjE1/MjgtNzE0Mi5qcGVn.jpeg","ean":"1 96587 37131 9","qty":2},{"id":165,"title":"On","artist":"Alt\u0131n G\u00fcn","label":"Les Disques Bongo Joe","prijs":21.99,"inkoop":13.74,"genres":["Folk","Funk"],"cover":"https://i.discogs.com/zYNkPnyMS5LWNBg-_ioeI63tBTzNcBFIm0uqWv2nOw8/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI2MDg0/ODY2LTE2ODIxNTU2/NTYtMzY2My5qcGVn.jpeg","ean":"7 640159 731252 >","qty":3},{"id":166,"title":"The Locket","artist":"Barney Artist, Mr Jukes","label":"Locket Records","prijs":24.99,"inkoop":15.62,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/ECGn7nE8N1LbRU8EI1_ZuVaBSe40S_Q69UsTPi2PtXo/rs:fit/g:sm/q:90/h:500/w:500/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE5Nzk3/MDU1LTE2Mjg0OTMx/OTktNjM5Mi5qcGVn.jpeg","ean":"0 602435 76659 1","qty":1},{"id":167,"title":"As Above So Below","artist":"Sampa The Great","label":"Loma Vista","prijs":15.99,"inkoop":9.99,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/pra9t5moaniQQbYYJHQ0vmrSzxo_B3kV0UWnCnbBsuU/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI1ODI2/MzU5LTE2NzQyMjI3/NjYtOTcwMC5qcGVn.jpeg","ean":"888072455214","qty":1},{"id":168,"title":"Code Derivation","artist":"Robert Glasper","label":"Loma Vista","prijs":37.99,"inkoop":23.74,"genres":["Jazz","RAP / HIP HOP"],"cover":"https://i.discogs.com/iCCPxETFOsAWKdaCqHNZEc0usXKlrNm6w5gY8KtH7lI/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2NDE3/ODE3LTE3NzAzNjE2/MTUtMTg1OS5qcGVn.jpeg","ean":"888072741058","qty":1},{"id":169,"title":"A Beautiful Revolution (Pt 1)","artist":"Common","label":"Loma Vista","prijs":17.99,"inkoop":11.24,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/_9fZM83AxdRv0u1a9Bx49OBHjWSoU4_VzY5nPWSvc7g/rs:fit/g:sm/q:90/h:600/w:596/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE3MzE0/NDI2LTE3NTEyMDcz/NDAtNDIwMC5qcGVn.jpeg","ean":"888072223455","qty":2},{"id":170,"title":"Sugar EP.","artist":"Tash Sultana","label":"Lonely Lands Records","prijs":24.99,"inkoop":15.62,"genres":[],"cover":"https://i.discogs.com/5v46O2HJ1eDfy02Md3y1YkBHZVo5XCGTAMXruCME5kY/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI4MDA3/OTg4LTE2OTQwMzk5/MjQtNDIxOC5qcGVn.jpeg","ean":"196588220715","qty":2},{"id":171,"title":"Bandana","artist":"Freddie Gibbs, Madlib","label":"Madlib Invazion","prijs":21.99,"inkoop":13.74,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/eK8VxKUtg6BSVtu5BwrTyMK-eng0HKOvT_bah5bpx5k/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEzOTMy/NjkzLTE2ODk5NTcz/NjctOTg1OC5qcGVn.jpeg","ean":"190759349212","qty":2},{"id":172,"title":"Universal High","artist":"Childhood","label":"Marathon Artists","prijs":19.99,"inkoop":12.49,"genres":["Pop","Soul"],"cover":"https://i.discogs.com/2oyEqGUNbzlQ8A_uFEkf9V_pUVDUWZT09L39UhoO7mQ/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEwNTk2/MTAzLTE1MDA2MzM5/NDYtOTA4OS5qcGVn.jpeg","ean":"5060454949572","qty":2},{"id":173,"title":"The Dots","artist":"ALASKALASKA","label":"Marathon Artists","prijs":19.99,"inkoop":12.49,"genres":["Folk","Pop"],"cover":"https://i.discogs.com/-uckPPtM4poaoE96ofzyiq1Jyx4gVROBEtzqQtQxPUY/rs:fit/g:sm/q:90/h:575/w:573/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEzNjE5/MjAzLTE1NTc2NTA3/OTctMzY4Ni5qcGVn.jpeg","ean":"5052442015666","qty":4},{"id":174,"title":"Ceremony","artist":"Tiny Ruins","label":"Marathon Artists","prijs":23.99,"inkoop":14.99,"genres":["Folk"],"cover":"https://i.discogs.com/Pv7Rwd8iFyz7Y-IEIAZEnVzb1f7V4MeDCv0Hrv9DcZc/rs:fit/g:sm/q:90/h:600/w:594/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI2OTAx/MTI4LTE2ODI2MTAy/NTItMzE3OS5qcGVn.jpeg","ean":"5052442023210","qty":1},{"id":175,"title":"Hi-Fidelity","artist":"Lava La Rue","label":"Marathon Artists","prijs":23.99,"inkoop":14.99,"genres":["Pop","RAP / HIP HOP"],"cover":"https://i.discogs.com/CNwJaHcLpONKJEVTslh4oDV-_WtBvYuA4QQr-s4jPCs/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI1OTA4/MzI1LTE2NzQ4Njc2/ODMtNTQ5Ny5qcGVn.jpeg","ean":"5052442022572","qty":1},{"id":176,"title":"Songs In A Minor","artist":"Alicia Keys","label":"MBK Entertainment","prijs":29.99,"inkoop":18.74,"genres":["Soul"],"cover":"https://i.discogs.com/1JbsMGV8NKjOCHO1yLTqcr46I4OKF80uAwKuPCuQKt0/rs:fit/g:sm/q:90/h:600/w:576/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTkxNjk1/ODktMTUyMjU4Mjcy/NC0xNzQ5LmpwZWc.jpeg","ean":"8 8985344291 1","qty":1},{"id":177,"title":"From A Room: Volume 1","artist":"Chris Stapleton","label":"Mercury Nashville","prijs":26.99,"inkoop":16.87,"genres":["Folk"],"cover":"https://i.discogs.com/23WW56CzpA8QXaoj6ua6W5QjJJtsiUc_2vX3yBrKuPM/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEwNDg4/MjczLTE0OTg0ODA3/NjUtNTI3Mi5qcGVn.jpeg","ean":"602557420678","qty":1},{"id":178,"title":"Just Piano","artist":"FKJ (French Kiwi Juice)","label":"Mom + Pop","prijs":36.99,"inkoop":23.12,"genres":["Electro","Jazz","Neo-Soul"],"cover":"https://i.discogs.com/VWLtmljNxlkui9qwDaq3fXiFYSHl99TRUOTzrax1d4s/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIzMjUy/Mjc2LTE2NTMwODUy/ODQtMTc1Mi5qcGVn.jpeg","ean":"0810090090467","qty":1},{"id":179,"title":"Cooleyhighharmony","artist":"Boyz II Men","label":"Motown","prijs":14.99,"inkoop":9.37,"genres":["Pop"],"cover":"https://i.discogs.com/sWXxk_oNitx2jBqa-M2c9y0l_Sn_KosJ-JEDXlldWVY/rs:fit/g:sm/q:90/h:581/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEzMTUy/MDEwLTE1NDg5NTk2/OTktMjQyMC5qcGVn.jpeg","ean":"6 02547 87825 0","qty":2},{"id":180,"title":"Baduizm","artist":"Erykah Badu","label":"Motown","prijs":32.99,"inkoop":20.62,"genres":["Neo-Soul"],"cover":"https://i.discogs.com/N465QTjmrDFelpW5394e8qvL6LB8owbGhIe3ne2uG9U/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTk0MDE0/OTktMTQ4MDM1OTEx/OC00ODYxLmpwZWc.jpeg","ean":"6 02557 01806 6","qty":1},{"id":181,"title":"Hollie Cook","artist":"Hollie Cook","label":"Mr Bongo","prijs":28.99,"inkoop":18.12,"genres":["Electro"],"cover":"https://i.discogs.com/zVgpreov6Yop7tTLLMq3DEHWolY5wLrWYWjZkkOi76o/rs:fit/g:sm/q:90/h:570/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2NTE3/ODg4LTE3NzE2NzI2/NTQtMjk5MC5qcGVn.jpeg","ean":"5024017006164","qty":1},{"id":182,"title":"FA-5","artist":"FA-5","label":"Mr Bongo","prijs":25.99,"inkoop":16.24,"genres":["Funk","Latin"],"cover":"https://i.discogs.com/KbG8o4JIRtHYw13mc5O20Q0iQAFppApYgIWsGPosYMA/rs:fit/g:sm/q:90/h:589/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxNzk4/MDI1LTE3MzIwMzg4/NjYtNjkxNS5qcGVn.jpeg","ean":"5024017000629","qty":1},{"id":183,"title":"Ray And His Court","artist":"Ray & His Court","label":"Mr Bongo","prijs":25.99,"inkoop":16.24,"genres":["Funk","Latin"],"cover":"https://i.discogs.com/cB_b_cybPHiR8oxOCOTmxFSB4Q9-qpXhhxZbF0OtEjo/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxOTYz/MzgyLTE3Mjg1Nzkx/MjgtNDk0NC5qcGVn.jpeg","ean":"5024017006034","qty":2},{"id":184,"title":"Sweet Sister Funk","artist":"Ramon Morris","label":"Mr Bongo","prijs":28.99,"inkoop":18.12,"genres":["Funk","Jazz"],"cover":"https://i.discogs.com/N5XwKN-3psUdK7kqlvyMSmetMmVhcaMBetVRpbxuYzQ/rs:fit/g:sm/q:90/h:450/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM1NTc4/MDc1LTE3NjIzNTk5/NzMtODAwMi5qcGVn.jpeg","ean":"5024017006461","qty":2},{"id":185,"title":"Paper Can\u2019t Wrap Fire","artist":"Don Glori","label":"Mr Bongo","prijs":28.99,"inkoop":18.12,"genres":["Jazz","Neo-Soul"],"cover":"https://i.discogs.com/6_4Gi6_RsuFsHziDmz0dM4BNptyFHFrjVeTvETWRIEE/rs:fit/g:sm/q:90/h:600/w:599/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0NzIy/NjMwLTE3NTQyMzg2/OTQtNTE1OC5qcGVn.jpeg","ean":"5024017006652","qty":1},{"id":186,"title":"My Latin Soul","artist":"Bobby Matos And The Combo Conquistadores","label":"Mr Bongo","prijs":28.99,"inkoop":18.12,"genres":["Jazz","Latin"],"cover":"https://i.discogs.com/v4iq4Tr37na1Bcj8Oj6r4rB0MzizTjgMQvmlqfNfwWQ/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM1MDkx/ODQ4LTE3NTkxOTMz/NjctODc3My5qcGVn.jpeg","ean":"5024017006638","qty":1},{"id":187,"title":"Ritmo Y Sabor","artist":"Manteca","label":"Mr Bongo","prijs":28.99,"inkoop":18.12,"genres":["Jazz","Latin"],"cover":"https://i.discogs.com/aUKm052svz2wZN0brh_oLxyI0hq9JhPwf46gnz1ir64/rs:fit/g:sm/q:90/h:600/w:570/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMzNjQw/MjE4LTE3NDQxMzE0/MzgtNzA1MS5qcGVn.jpeg","ean":"5024017006225","qty":1},{"id":188,"title":"True Story","artist":"Malcolm Jiyane Tree-O","label":"Mushroom Hour Half Hour","prijs":28.99,"inkoop":18.12,"genres":["Folk","Jazz"],"cover":"https://i.discogs.com/_Jt3phA5WfcCeG-rdrxJbhQEPkzVTfL2hpU82e7OdjY/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxNDAw/NDA1LTE3MjI3ODEw/MTAtNDQwNC5qcGVn.jpeg","ean":"8721056395668","qty":3},{"id":189,"title":"Saci Perer\u00ea","artist":"Banda Black Rio","label":"Music On CD","prijs":4.99,"inkoop":3.12,"genres":["Funk","Jazz","Latin"],"cover":"https://i.discogs.com/C3-qEzP8j3DgN4yvhnhce6FrrcxzENOcrMtiSO7ywXg/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxNDk0/Nzc2LTE3MjM4MjIw/NDUtODQxMC5qcGVn.jpeg","ean":"8 718627 236642","qty":1},{"id":190,"title":"Here Comes Shuggie Otis","artist":"Shuggie Otis","label":"Music On Vinyl","prijs":25.99,"inkoop":16.24,"genres":["Soul"],"cover":"https://i.discogs.com/iU-7l_oAx0p9NCLVfxi63RRzgmVQq54ktZkzOR-TCpA/rs:fit/g:sm/q:90/h:597/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTc0Njc3/NjQtMTU0NzM2ODQz/Ni00MTU5LmpwZWc.jpeg","ean":"8718469539741","qty":1},{"id":191,"title":"In The Dark","artist":"Toots & The Maytals","label":"Music On Vinyl","prijs":23.99,"inkoop":14.99,"genres":[],"cover":"https://i.discogs.com/4TZrJIaoDyxTFI_6UHKGnIpWR90LScF7nd_45IXCuyo/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE1NjM4/NjQ5LTE3NzUwNDU0/MTktNjEzNi5qcGVn.jpeg","ean":"600753852255","qty":2},{"id":192,"title":"007 Shanty Town","artist":"Desmond Dekker & The Aces","label":"Music On Vinyl","prijs":25.99,"inkoop":16.24,"genres":[],"cover":"","ean":"8719262039988","qty":2},{"id":193,"title":"Still Bill","artist":"Bill Withers","label":"Music On Vinyl","prijs":26.99,"inkoop":16.87,"genres":["Funk","Soul"],"cover":"https://i.discogs.com/ITWpwgIpx9xCYJIIwYuw9xd3Gtv1EPsEE5itHfZ2l48/rs:fit/g:sm/q:90/h:427/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2OTEy/MDU0LTE3NzQ3NzI5/OTMtNDAxNS5qcGVn.jpeg","ean":"8 719262 041622","qty":2},{"id":194,"title":"Uptown Saturday Night","artist":"Camp Lo","label":"Music On Vinyl","prijs":29.99,"inkoop":18.74,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/-KcA8t_o6D7k98OrpkePa4ieCSx-RSRbg1NfC0u8F-g/rs:fit/g:sm/q:90/h:600/w:598/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0ODEw/MDEzLTE3NTY5MzEy/MDUtMzUzNC5qcGVn.jpeg","ean":"8719262039865","qty":1},{"id":195,"title":"Security","artist":"Antibalas","label":"Music On Vinyl","prijs":35.99,"inkoop":22.49,"genres":["Afrobeat","Funk","Jazz"],"cover":"https://i.discogs.com/vygt0Obgr6EVW_i0gtqghWuiXbbgHRq9PotSANFv8pk/rs:fit/g:sm/q:90/h:571/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2NTQ5/NTQ0LTE3NzI0OTM0/ODUtMTMyMS5qcGVn.jpeg","ean":"8 719262 042131","qty":1},{"id":196,"title":"Spectrum","artist":"Billy Cobham","label":"Music On Vinyl","prijs":26.99,"inkoop":16.87,"genres":["Jazz"],"cover":"https://i.discogs.com/1NnUPjRSLE2UEo8se92N4hZ2RIDuILZSuH4ca-cJYdY/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyMjgy/MDM5LTE1MzQ1OTA2/NzMtOTU2OS5qcGVn.jpeg","ean":"8719262006881","qty":2},{"id":197,"title":"Roberta Flack & Donny Hathaway","artist":"Roberta Flack, Donny Hathaway","label":"Music On Vinyl","prijs":26.99,"inkoop":16.87,"genres":["Soul"],"cover":"https://i.discogs.com/Z6snKsjlf1bKRBgLC_egUZk0PFR3P5G9QMa117KUiGU/rs:fit/g:sm/q:90/h:466/w:466/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE0MzI2/NTgxLTE1NzIyODUw/NjYtOTY2OS5qcGVn.jpeg","ean":"8719262011076","qty":2},{"id":198,"title":"The Time Has Come","artist":"The Chambers Brothers","label":"Music On Vinyl","prijs":23.99,"inkoop":14.99,"genres":["Soul"],"cover":"https://i.discogs.com/-ixFo6l0FJxP79Yi4cWU3dtxM93on0XvI10BFlEq9DM/rs:fit/g:sm/q:90/h:598/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2MzI0/NTUzLTE3Njk0NTEw/NDAtNzM2OS5qcGVn.jpeg","ean":"8 719262 041387","qty":2},{"id":199,"title":"Curtis / Live!","artist":"Curtis Mayfield","label":"Music On Vinyl","prijs":29.99,"inkoop":18.74,"genres":["R&B","Soul"],"cover":"https://i.discogs.com/66I7h3Dd368RjScJN0tOFwRZhb9BbP0pYCAj1MFhCrI/rs:fit/g:sm/q:90/h:599/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTY2MTUw/OTQtMTUwNDM4MzY2/Ny0zNzg2LmpwZWc.jpeg","ean":"8718469537846","qty":2},{"id":200,"title":"Inspiration Information","artist":"Shuggie Otis","label":"Music On Vinyl","prijs":25.99,"inkoop":16.24,"genres":["Electro","Funk"],"cover":"https://i.discogs.com/xLoptV3zPnpMeAbYstav7z-xCJqGLOdRdj6XXC5Hf-I/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTUwMTMx/MTMtMTM5OTIwNjc1/Ni01MjA4LmpwZWc.jpeg","ean":"8718469533589","qty":2},{"id":201,"title":"Afreaka!","artist":"Demon Fuzz","label":"Music On Vinyl","prijs":25.99,"inkoop":16.24,"genres":[],"cover":"https://i.discogs.com/ItDpWUlnJytcvVfbcNUS0J0xr7phtsOIvsHHsIps278/rs:fit/g:sm/q:90/h:594/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2NzMx/MDQ0LTE3NzMyMjc0/MjUtMjkwNi5qcGVn.jpeg","ean":"8 719262 039636","qty":2},{"id":202,"title":"Shrine","artist":"Dee C. Lee","label":"Music On Vinyl","prijs":8.99,"inkoop":5.62,"genres":["Pop","Soul"],"cover":"https://i.discogs.com/ZjNxU1FWoBnDxM_xvyjEhmMfiPaLaqvqEqBROX_poDg/rs:fit/g:sm/q:90/h:600/w:598/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxMzAz/ODY5LTE3Njc0OTM0/NjYtMTg3Ny5qcGVn.jpeg","ean":"8 719262 027831","qty":1},{"id":203,"title":"3 + 3","artist":"The Isley Brothers","label":"Music On Vinyl","prijs":26.99,"inkoop":16.87,"genres":["Funk","Soul"],"cover":"https://i.discogs.com/81yurBtg6ZUmiND-iA0ukKzOQh4A6wP7shH43pSe2Uo/rs:fit/g:sm/q:90/h:600/w:595/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTU4NTE1/MTUtMTU1NDMwNTkz/NS0yMDAyLmpwZWc.jpeg","ean":"8718469533428","qty":3},{"id":204,"title":"Monkey Man","artist":"The Maytals","label":"Music On Vinyl","prijs":25.99,"inkoop":16.24,"genres":["Ska"],"cover":"https://i.discogs.com/ESdiBEzWhJ7guWXhJFXwKSb3J9koiMwQLaNfMuTKDkw/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0NzI0/NDMzLTE3NTQyNTEx/NDctMzcwNi5qcGVn.jpeg","ean":"8 719262 039995","qty":1},{"id":205,"title":"Rock Steady With Dandy","artist":"Dandy Livingstone","label":"Music On Vinyl","prijs":25.99,"inkoop":16.24,"genres":[],"cover":"https://i.discogs.com/vIC9BthOvF-CDa_NHiOMApH0moy_ipshGVq3SPpPpbk/rs:fit/g:sm/q:90/h:598/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM1OTM1/MTA4LTE3NjU4MjQ4/ODUtMTc5NS5qcGVn.jpeg","ean":"8719262038592","qty":2},{"id":206,"title":"Love Is The New Black","artist":"Anthony Hamilton","label":"My Music Box","prijs":33.99,"inkoop":21.24,"genres":["Soul"],"cover":"https://i.discogs.com/Tv15p4UolXmJkecjy5903WlLxGJMx5nq3ZZ_MCFbThg/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIzNDQy/MTgyLTE2NTQxNzcy/NjMtMzkwNS5qcGVn.jpeg","ean":"4050538719956","qty":1},{"id":207,"title":"When The Dust Settles","artist":"Balimaya Project","label":"New Soil (2)","prijs":29.99,"inkoop":18.74,"genres":["Folk","Jazz"],"cover":"https://i.discogs.com/HuB4Ga6RGZzY2jr1FShe52q7wlvBKzWPuGdTCJgvFXg/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI3Nzg2/NzE3LTE2OTAzNzMy/ODMtMjI1Ni5qcGVn.jpeg","ean":"8720923512702","qty":1},{"id":208,"title":"Cadair Idris","artist":"Awen Ensemble","label":"New Soil (2)","prijs":29.99,"inkoop":18.74,"genres":["Jazz"],"cover":"https://i.discogs.com/nhE20TNmMPgpRZwHFCsrNER39Zcou1G4HQNfPgugqEs/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMwNTky/NTEwLTE3NDkzOTYx/NjItNTYzNC5qcGVn.jpeg","ean":"8721056314768","qty":3},{"id":209,"title":"Sciall\u00e0","artist":"Nu Genea","label":"NG Records (5)","prijs":25.99,"inkoop":16.24,"genres":["Folk","Funk","Latin"],"cover":"https://i.discogs.com/60aPGAjWMHMMTQzGE0tYkzy5I64yCw8pBIAhI7aNKD0/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0NDI5/MDMzLTE3NTE2NDM5/MzUtOTk1Mi5qcGVn.jpeg","ean":"2999999110273","qty":2},{"id":210,"title":"Bar Mediterraneo","artist":"Nu Genea","label":"NG Records (5)","prijs":37.99,"inkoop":23.74,"genres":["Folk","Jazz"],"cover":"https://i.discogs.com/iplDhqZM-SDk2EkTfiF1r3oi40d8MZvlTamow9ZYBAw/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI1Mzk2/MzcyLTE2NzA0Mjgy/MTEtMzU5OC5qcGVn.jpeg","ean":"8026208968746","qty":2},{"id":211,"title":"To Believe","artist":"The Cinematic Orchestra","label":"Ninja Tune","prijs":8.99,"inkoop":5.62,"genres":["Electro","Jazz"],"cover":"https://i.discogs.com/omOSc-JTEyyahN7Jlcvx7XT6rPrZMcEHvjUWlTIVqvo/rs:fit/g:sm/q:90/h:543/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEzMzUw/MjY5LTE1NTI1NzQ0/NzYtMjU0Mi5qcGVn.jpeg","ean":"5054429135749","qty":1},{"id":212,"title":"De Nachtwacht","artist":"De Nachtwacht","label":"Noah's Ark","prijs":32.99,"inkoop":20.62,"genres":["Pop"],"cover":"https://i.discogs.com/kYTmnu_HZvWf2Mr1DxWBFkVcZ2wVfn-lCv02C4-VEjs/rs:fit/g:sm/q:90/h:580/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2MTcy/MTYyLTE3NjgxNDY2/NzQtMTY3Ny5qcGVn.jpeg","ean":"0 602488 023641","qty":2},{"id":213,"title":"The Lucky One","artist":"Cory Wong","label":"Not On Label (Cory Wong Self-released)","prijs":39.99,"inkoop":24.99,"genres":["Funk","Jazz","Soul"],"cover":"https://i.discogs.com/KYjOQqlz6qgHZMsHWW-g8deENVGzeUc0cucKyp0UA_8/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5Mzc1/NzcwLTE3MDY0ODI4/OTQtOTEwNi5qcGVn.jpeg","ean":"3760370267553","qty":2},{"id":214,"title":"Malibu","artist":"Anderson .Paak","label":"OBE","prijs":53.99,"inkoop":33.74,"genres":["Neo-Soul","RAP / HIP HOP"],"cover":"https://i.discogs.com/qaJSLTW4G8ERqp9_h7oZ7Fk9y5CIKW5mLTU9VGKN0aU/rs:fit/g:sm/q:90/h:593/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM3MDgy/ODQxLTE3NzYzOTAx/MzktNzk2Ni5qcGVn.jpeg","ean":"199316418934","qty":1},{"id":215,"title":"Malibu = \ub9d0\ub9ac\ubd80","artist":"Anderson .Paak, Anderson .Paak","label":"OBE","prijs":71.99,"inkoop":44.99,"genres":["Neo-Soul","RAP / HIP HOP"],"cover":"https://i.discogs.com/vx76NW24VtWa30LzOhiUGEC8kQuO2nV5pfknPCDztzw/rs:fit/g:sm/q:90/h:593/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM3MTA1/NDg4LTE3NzY1MzIy/NjgtNjcxNC5qcGVn.jpeg","ean":"1 99316 41890 3","qty":2},{"id":216,"title":"Jorge Ben","artist":"Jorge Ben","label":"Opini\u00e3o (2)","prijs":20.99,"inkoop":13.12,"genres":["Latin"],"cover":"https://i.discogs.com/J-P9BdjuvuXyg5YaHW38ZuFMNp7-nEtVtJ2YsIaEyJ8/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2MTcw/ODQ4LTE3NzE3Mzg1/NTYtOTQzNy5qcGVn.jpeg","ean":"7 451107 771028","qty":5},{"id":217,"title":"Mystic Man","artist":"Peter Tosh","label":"Parlophone","prijs":20.99,"inkoop":13.12,"genres":[],"cover":"https://i.discogs.com/rLpo0T59Dgj9xlrHXvb1B_WOYSvnPyxC5gfcTTk_m6M/rs:fit/g:sm/q:90/h:594/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMyNTEz/NDQ1LTE3MzM3MDUy/MTgtNzUzNC5qcGVn.jpeg","ean":"5 021732 442567","qty":1},{"id":218,"title":"Chp VII","artist":"Ezra Collective","label":"Partisan Records","prijs":25.99,"inkoop":16.24,"genres":["Jazz"],"cover":"https://i.discogs.com/zkMuc9JvnUZswBiECLFo1cAf3NEysaSp6kqEC8SpTd4/rs:fit/g:sm/q:90/h:600/w:597/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM3MDk2/MTg1LTE3NzY1MDAy/MzctNzY3NS5qcGVn.jpeg","ean":"7 20841 15851 6","qty":4},{"id":219,"title":"Mr. Morale & The Big Steppers","artist":"Kendrick Lamar","label":"pgLang","prijs":48.99,"inkoop":30.62,"genres":["Jazz","Neo-Soul","RAP / HIP HOP"],"cover":"https://i.discogs.com/zBPzZiIZzQPTcQ5jz9NhDUuaWAaMe-P0B5sHH6SgYZA/rs:fit/g:sm/q:90/h:590/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0MzU2/OTAwLTE2NjY5NDEz/MDEtNjI3Mi5qcGVn.jpeg","ean":"602445926015","qty":1},{"id":220,"title":"Edwin Birdsong","artist":"Edwin Birdsong","label":"Philadelphia International Records","prijs":10.99,"inkoop":6.87,"genres":["Funk"],"cover":"https://i.discogs.com/jKYwQWzBbnfomV4zmtcjVUFSrvBH6-TnsANRD3_SWqk/rs:fit/g:sm/q:90/h:586/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxNjYy/Mzc3LTE3MjU1NjY4/MTYtMzA4MS5qcGVn.jpeg","ean":"8719262032996","qty":3},{"id":221,"title":"The Aggrolites","artist":"The Aggrolites","label":"Pirates Press Records","prijs":41.99,"inkoop":26.24,"genres":["Ska"],"cover":"https://i.discogs.com/Ji11Xjt8oxykHdVlLNmY2e_M9sRfQeFZazkhrmFtpkQ/rs:fit/g:sm/q:90/h:534/w:531/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE2MzUw/NjE1LTE2MDcyMzA4/MTYtODA5MS5qcGVn.jpeg","ean":"8 10017 64431 5","qty":1},{"id":222,"title":"Heat The Streets","artist":"Elmiene","label":"Polydor","prijs":32.99,"inkoop":20.62,"genres":["R&B"],"cover":"https://i.discogs.com/MUnxgXrgoCMi80sjntyYnGh-3KxdcXNwT7ev08s3eaQ/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM1OTQ4/Mjc4LTE3NjU5Njc3/MDMtMzMwMi5qcGVn.jpeg","ean":"602488101547","qty":2},{"id":223,"title":"Home Again","artist":"Michael Kiwanuka","label":"Polydor","prijs":26.99,"inkoop":16.87,"genres":["Folk","Soul"],"cover":"https://i.discogs.com/DN6Ku8JhdbcRe4FZBg1uUolV0xsAJECWVGn5Us2ToPg/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0NjEz/MDktMTMzMTI4OTkx/MS5qcGVn.jpeg","ean":"602527971339","qty":2},{"id":224,"title":"Black Caesar","artist":"James Brown","label":"Polydor","prijs":18.99,"inkoop":11.87,"genres":["Funk","Soul"],"cover":"https://i.discogs.com/Ow6kOf9AvC2XRCJTF841Lktci0j_ZfbVvbxs60N5lmM/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyNjM3/NjYzLTE1MzkwOTY1/ODAtMjI4My5qcGVn.jpeg","ean":"602567717560","qty":5},{"id":225,"title":"Lifeline","artist":"Roy Ayers Ubiquity","label":"Polydor","prijs":32.99,"inkoop":20.62,"genres":[],"cover":"https://i.discogs.com/4UEokvsMU4nOTYvNGNOt7M63w7tZeyeUFSAAPZdsNVE/rs:fit/g:sm/q:90/h:500/w:500/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTExNzE3/Mzc3LTE1MjExOTM1/NzctNTEyMS5qcGVn.jpeg","ean":"602557649659","qty":1},{"id":226,"title":"The Payback","artist":"James Brown","label":"Polydor","prijs":42.99,"inkoop":26.87,"genres":["Funk"],"cover":"https://i.discogs.com/G9TMfh9bUxjGTUIS0xDmGLKf9qF7ne1Rbd0Sb-dRs5I/rs:fit/g:sm/q:90/h:597/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2OTcz/MjQyLTE3NzUzMTY0/ODEtMzEzNy5qcGVn.jpeg","ean":"602488130158","qty":2},{"id":227,"title":"The Return Of The Incredible Bongo Band","artist":"The Incredible Bongo Band","label":"Pride","prijs":23.99,"inkoop":14.99,"genres":["Funk"],"cover":"https://i.discogs.com/TEScYR0RFmFeua61fBqmnErtJ-3HeuWHTkTHnuZh1WY/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTUzNjY1/MjYtMTQ0OTc2MTg0/OC01OTE4LmpwZWc.jpeg","ean":"7 11969 12771 3","qty":2},{"id":228,"title":"From The Foundations","artist":"The Foundations","label":"Pye Records","prijs":18.99,"inkoop":11.87,"genres":["Pop"],"cover":"https://i.discogs.com/0W1UjCDduh3ewLDQKXv3drYWfdZ6JS56wcGZbHMqF-4/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI1NDM3/NTYyLTE2NzA3OTU1/MzktOTU0OS5qcGVn.jpeg","ean":"8 1951401212 2","qty":2},{"id":229,"title":"At Home","artist":"Avishai Cohen Trio, Avishai Cohen Ensemble","label":"Razdaz Recordz","prijs":38.99,"inkoop":24.37,"genres":["Jazz"],"cover":"https://i.discogs.com/yhrtU4GmXHkQvmqdQICrvgnAB2J4Uexc00VJkYbA8HY/rs:fit/g:sm/q:90/h:600/w:581/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMzMjI1/MjI1LTE3NDAzMTQy/MjktOTI1MS5qcGVn.jpeg","ean":"3700187686130","qty":1},{"id":230,"title":"Bubba","artist":"Kaytranada","label":"RCA","prijs":39.99,"inkoop":24.99,"genres":["Electro","RAP / HIP HOP"],"cover":"https://i.discogs.com/xyNZPWWPV5Hw3vnQHP-IMYyVd_jRLdtYLClXYCGPEBQ/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE1NDYx/OTA3LTE2MDM3MDkx/NzUtNDg3MC5qcGVn.jpeg","ean":"1 9439-72448-1 6","qty":1},{"id":231,"title":"Ain't No Damn Way!","artist":"Kaytranada","label":"RCA","prijs":29.99,"inkoop":18.74,"genres":["Electro"],"cover":"https://i.discogs.com/97okNRKGZq06ZzIFQ7lNElRJnQCLpl9VQD6nuFTM328/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM1NTEz/MjAwLTE3NjY2Njc2/MDktODYxMi5qcGVn.jpeg","ean":"198029812510","qty":4},{"id":232,"title":"Alicia","artist":"Alicia Keys","label":"RCA","prijs":37.99,"inkoop":23.74,"genres":["Soul"],"cover":"https://i.discogs.com/hAZYXIk6m52tzcGVLyEE-O0386cKFxty4mDWvc5oqwQ/rs:fit/g:sm/q:90/h:300/w:300/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE2NDc3/OTExLTE2MDgyOTYx/NDUtNjY1My5wbmc.jpeg","ean":"0194397341119","qty":1},{"id":233,"title":"Enter The Wu-Tang (36 Chambers)","artist":"Wu-Tang Clan","label":"RCA","prijs":23.99,"inkoop":14.99,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/5juFYMqZhorBHzmNUltu-3KSwwTG4zfSc-Ni-FkXyVw/rs:fit/g:sm/q:90/h:592/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5NjQ3/MjczLTE3MDY2NDYw/NTMtMzQ5Mi5qcGVn.jpeg","ean":"1 90758 83381 1","qty":2},{"id":234,"title":"Son Of Spergy","artist":"Daniel Caesar","label":"Republic Records","prijs":42.99,"inkoop":26.87,"genres":["Pop"],"cover":"https://i.discogs.com/2o4JI4AxvcKRZPzCK5u01yc5S3yjZdNrmpq0jKnoNQk/rs:fit/g:sm/q:90/h:600/w:597/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM1NDY4/MTE2LTE3NjE0MzYw/MDUtNzE0NS5qcGVn.jpeg","ean":"0602478807039","qty":2},{"id":235,"title":"Mirage","artist":"Glass Beams","label":"Research Records","prijs":22.99,"inkoop":14.37,"genres":["Electro","Folk","Jazz"],"cover":"https://i.discogs.com/yLOcj3tfsfS79PS0ejnxDMeglTmTLCe6c6j7-ASsymA/rs:fit/g:sm/q:90/h:594/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2NjE3/MzI2LTE3NzQyNzA4/NjQtNDgzOC5qcGVn.jpeg","ean":"5 050580 758063","qty":6},{"id":236,"title":"Now Playing","artist":"Donny Hathaway","label":"Rhino Records (2)","prijs":18.99,"inkoop":11.87,"genres":["Funk","Soul"],"cover":"https://i.discogs.com/s1jRPhIElb7szE11IWVgV9rPSW0E6a8I69Zrc0cY23c/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxMTc1/MzkyLTE3MjA1Mjg1/MzctMjA3NC5qcGVn.jpeg","ean":"6 03497 82516 5","qty":1},{"id":237,"title":"Live","artist":"Donny Hathaway","label":"Rhino Records (2)","prijs":47.99,"inkoop":29.99,"genres":["Funk","Soul"],"cover":"https://i.discogs.com/grcewg_e4SgkuJyYbo_TlPTrJtcbD1ZfRnJDUnaF4Is/rs:fit/g:sm/q:90/h:585/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2NDQw/MDE5LTE3NzA1MjIw/NzYtNzMyOS5qcGVn.jpeg","ean":"603497809332","qty":10},{"id":238,"title":"Walk This Road","artist":"The Doobie Brothers","label":"Rhino Records (2)","prijs":20.99,"inkoop":13.12,"genres":["Jazz","Pop"],"cover":"https://i.discogs.com/zbVGafiX_uBfHNjqEzfilT2lobfkyxvPyyHl5i2ChgQ/rs:fit/g:sm/q:90/h:600/w:582/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0MTky/NjUxLTE3NDkyMjEw/NjgtMzQ4Ny5qcGVn.jpeg","ean":"0603497818433","qty":1},{"id":239,"title":"Hold On, I'm Comin'","artist":"Sam & Dave","label":"Rhino Records (2)","prijs":47.99,"inkoop":29.99,"genres":["Soul"],"cover":"https://i.discogs.com/oqQbDLhmSaVeBtAz160Fe10aLcFVaI73ygX_EAvpMnU/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2NDM5/NTE4LTE3NzA1MTc3/OTUtNTk4My5qcGVn.jpeg","ean":"6 034978 0921 9","qty":1},{"id":240,"title":"The College Dropout","artist":"Kanye West","label":"Roc-A-Fella Records","prijs":37.99,"inkoop":23.74,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/KuWqFvHdyHGagAPcBUEWP0oyoyX1pmS46iIWXev063s/rs:fit/g:sm/q:90/h:577/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5MzQw/MDg1LTE3MDM4Njg1/MTQtNzY1NS5wbmc.jpeg","ean":"602498617410","qty":1},{"id":241,"title":"Starship Syncopation","artist":"Cory Wong, Metropole Orchestra","label":"Roundwound Media, LLC","prijs":28.99,"inkoop":18.12,"genres":["Jazz","Pop"],"cover":"https://i.discogs.com/9rEQwTwvhhnwnt382vPsvejSqeSQWXZ62b-y4wyJLwU/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMyMTYz/Nzg5LTE3NTM0NDAw/MzYtMzc3My5qcGVn.jpeg","ean":"3 760396 025946","qty":1},{"id":242,"title":"Lost In The Wonder","artist":"Cory Wong","label":"Roundwound Media, LLC","prijs":35.99,"inkoop":22.49,"genres":["Funk","Pop"],"cover":"https://i.discogs.com/EIbNlLrWR35-rvf47e8FQDab1ngxnUFTveesPXWePv0/rs:fit/g:sm/q:90/h:600/w:418/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2NzEz/NzEzLTE3NzI5Njk4/MjAtODQzMi5qcGVn.jpeg","ean":"3760434481086","qty":2},{"id":243,"title":"Live At Montreux Jazz Fest","artist":"Cory Wong","label":"Roundwound Media, LLC","prijs":44.99,"inkoop":28.12,"genres":["Jazz"],"cover":"https://i.discogs.com/iiWuY9ofsCWXeJGWPXBP7aw883KVyWeMYbPlC0cpchM/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2MDM3/NDU2LTE3NjczNTgz/NTgtNDA5Ny5qcGVn.jpeg","ean":"3 760420 428675","qty":2},{"id":244,"title":"The Miseducation Of Lauryn Hill","artist":"Lauryn Hill","label":"Ruffhouse Records","prijs":29.99,"inkoop":18.74,"genres":["Neo-Soul","RAP / HIP HOP"],"cover":"https://i.discogs.com/ANPnqwNfdJE-hie2CHVdebyx8hGefjGWeKvLlGDM_p0/rs:fit/g:sm/q:90/h:598/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTg2MzIz/MTktMTczMTk1NTE2/MS01NzE1LmpwZWc.jpeg","ean":"888751942219","qty":4},{"id":245,"title":"Straight Outta Compton","artist":"N.W.A.","label":"Ruthless Records","prijs":32.99,"inkoop":20.62,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/v9CAsrvZSPu3RTiPaIvZNAICBQ2v9JbdyYEmTi4vI_c/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0MjI2/MjYyLTE2NjA3MjUw/MTQtOTA4Mi5qcGVn.jpeg","ean":"6 00753 46995 8","qty":1},{"id":246,"title":"Game Winner","artist":"Joey Dosik","label":"Secretly Canadian","prijs":17.99,"inkoop":11.24,"genres":["R&B","Soul"],"cover":"https://i.discogs.com/Clnteg3CM7uhY5Z3iDjI515fWJ0X7xlIHGWeyBBJ3TY/rs:fit/g:sm/q:90/h:595/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTExNzc1/NTg3LTE1MzQ5OTY2/MTYtNjIxMS5qcGVn.jpeg","ean":"0656605036311","qty":2},{"id":247,"title":"Liquorice","artist":"Hatchie","label":"Secretly Canadian","prijs":33.99,"inkoop":21.24,"genres":["Pop"],"cover":"https://i.discogs.com/jFCWihTDhP_fjuzo7X4D0iFo_HTVxnoNWamp9dCnPtE/rs:fit/g:sm/q:90/h:586/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM1NTk3/MDE0LTE3NjI1NTEw/NjctOTE0NS5qcGVn.jpeg","ean":"656605050331","qty":2},{"id":248,"title":"Inside Voice","artist":"Joey Dosik","label":"Secretly Canadian","prijs":28.99,"inkoop":18.12,"genres":[],"cover":"https://i.discogs.com/Yh_bj05F5wcNtT4CU1NVK4PBszEG7djwwc2EQJBNBGw/rs:fit/g:sm/q:90/h:380/w:380/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEyNDI4/ODI3LTE1MzUxMTQz/MDAtNDQ0Ny5qcGVn.jpeg","ean":"656605036434","qty":1},{"id":249,"title":"It\u2019s Like I Never Left","artist":"Nectar Woode","label":"Since '93","prijs":29.99,"inkoop":18.74,"genres":["Soul"],"cover":"https://i.discogs.com/agyjtJJkRMci-ZdPtS-w8iHqtt_CGzJ9kAyKNPbeZrM/rs:fit/g:sm/q:90/h:600/w:591/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0NjA0/ODcyLTE3NjY0ODcx/MzctMTM5My5qcGVn.jpeg","ean":"198029295917","qty":2},{"id":250,"title":"Venus","artist":"Zara Larsson","label":"Sommer House","prijs":29.99,"inkoop":18.74,"genres":["Pop"],"cover":"https://i.discogs.com/Ap-nrxFI-8t4kiJfy1b-V9NNzUouRhnQR7zdy0rXUso/rs:fit/g:sm/q:90/h:600/w:589/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5OTU3/MjMwLTE3MDkyMDQ2/MzItMzY4Mi5qcGVn.jpeg","ean":"1 96588 13031 1","qty":2},{"id":251,"title":"Age Ain't Nothing But A Number","artist":"Aaliyah","label":"Sony Music","prijs":41.99,"inkoop":26.24,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/N-pZybk9d-JJSwOJueooJOsYfYWjZQaDDPHZrxdwv2A/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM3MzQ1/MjQyLTE3Nzg4Mzgw/NzQtMTM5My5qcGVn.jpeg","ean":"1 99584 14511 2","qty":2},{"id":252,"title":"All I Want Is You","artist":"Miguel","label":"Sony Music","prijs":24.99,"inkoop":15.62,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/cqvuNahTPB8SglHUQyyLyyDZxqg9cvKj1LnOyFU4zbY/rs:fit/g:sm/q:90/h:596/w:599/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2NDYx/OTM0LTE3NzA3MjQw/OTgtOTYxOS5qcGVn.jpeg","ean":"198029452815","qty":5},{"id":253,"title":"The Mauskovic Dance Band","artist":"The Mauskovic Dance Band","label":"Soundway","prijs":26.99,"inkoop":16.87,"genres":["Afrobeat","Folk","Latin","Pop"],"cover":"https://i.discogs.com/8NoAzO7cYSotEKLjpw0sqQqb_gGVZ1EnL7ihJpEvS4g/rs:fit/g:sm/q:90/h:561/w:561/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTEzNjQw/MTc2LTE2ODI2OTA2/MzgtMzY2NC5qcGVn.jpeg","ean":"5060571360519","qty":1},{"id":254,"title":"Soul Makossa","artist":"Lafayette Afro Rock Band","label":"Strut","prijs":27.99,"inkoop":17.49,"genres":["Afrobeat","Folk","Funk","Jazz"],"cover":"https://i.discogs.com/8XsD3pXNoJgXFf4n0R37tS_2L2me_OQdF6dXA8TH-5c/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxMTEz/ODYzLTE3Mjk5OTM1/MDYtOTkxNy5qcGVn.jpeg","ean":"4 062548 089356","qty":2},{"id":255,"title":"The Afro Instrumental LP","artist":"Ice","label":"Strut","prijs":27.99,"inkoop":17.49,"genres":["Afrobeat","Jazz"],"cover":"https://i.discogs.com/v4v63wtKWZqy5zycyTD3HIJVcL-xEJjEpWpufjhFU9E/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMzODQ4/NzE4LTE3NDkzMTI3/MTgtNDAyMC5qcGVn.jpeg","ean":"4062548103571","qty":2},{"id":256,"title":"Momoko","artist":"Momoko Gill","label":"Strut","prijs":29.99,"inkoop":18.74,"genres":["Jazz"],"cover":"https://i.discogs.com/q_jMPLmdCi0ViGFPzijyCGn9IDIfTpi3-bYsf7ij9xk/rs:fit/g:sm/q:90/h:340/w:340/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2NTAy/NTI1LTE3NzEwODAz/NDItODYwNi5qcGVn.jpeg","ean":"4062548125412","qty":2},{"id":257,"title":"Chasing Shadows","artist":"Nubiyan Twist","label":"Strut","prijs":29.99,"inkoop":18.74,"genres":["Afrobeat","Jazz"],"cover":"https://i.discogs.com/h-aIIHmXKuCVjPuz9XXpGoAq7n5xIsTOyEYNExwRrdk/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2Nzc1/NDExLTE3NzQxMDA3/MjYtOTUyNS5qcGVn.jpeg","ean":"4 062548 130881","qty":1},{"id":258,"title":"Coming From Reality","artist":"Sixto Rodriguez","label":"Sussex","prijs":32.99,"inkoop":20.62,"genres":[],"cover":"https://i.discogs.com/mTC6vQE1lRHnZWYz8uLinrDcKwB59ZoxA7x1nqgfCV0/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTE0MDU4/NjU3LTE1NjgxNjQ5/NTktMjE4My5qcGVn.jpeg","ean":"602577077388","qty":1},{"id":259,"title":"Trouble Man","artist":"Marvin Gaye","label":"Tamla","prijs":35.99,"inkoop":22.49,"genres":["Funk","Jazz","Soul"],"cover":"https://i.discogs.com/JSdBpuQeIf4htYosYi4DaQ5vRsXUYlUur0ebiLO1lQA/rs:fit/g:sm/q:90/h:600/w:593/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM3MTk1/OTI2LTE3NzczNjky/MjUtNzY2NS5qcGVn.jpeg","ean":"0602488221634","qty":1},{"id":260,"title":"Hotter Than July","artist":"Stevie Wonder","label":"Tamla","prijs":32.99,"inkoop":20.62,"genres":["R&B"],"cover":"https://i.discogs.com/77IfHTJX2GsMqrNZUR1jy8_sGls5WUgYhQS6zp3WEtk/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMwMTg3/MTk5LTE3MTEyODM1/NzktMjc5Mi5qcGVn.jpeg","ean":"602557378399","qty":1},{"id":261,"title":"Let's Get It On","artist":"Marvin Gaye","label":"Tamla","prijs":32.99,"inkoop":20.62,"genres":["Funk"],"cover":"https://i.discogs.com/_ilL41aOUEOCsYeOhLQQEBAKzvw9IzwywErKjTC7cQE/rs:fit/g:sm/q:90/h:254/w:198/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2Nzg2/NTA1LTE3NzgxMTM4/MjgtODY1Mi5qcGVn.jpeg","ean":"0602488130189","qty":2},{"id":262,"title":"New Wave","artist":"Various","label":"TopNotch","prijs":32.99,"inkoop":20.62,"genres":["Electro","Pop","RAP / HIP HOP"],"cover":"https://i.discogs.com/wdVborGLLO-oJqqtPbFx-Tqu4uFCHDTWb-xfqqjRbTM/rs:fit/g:sm/q:90/h:450/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2NDEy/MTQ0LTE3NzAyOTY1/NDgtMTMyOC5qcGVn.jpeg","ean":"0 602488 093521","qty":1},{"id":263,"title":"Cold Fact","artist":"Sixto Rodriguez","label":"UMe","prijs":32.99,"inkoop":20.62,"genres":[],"cover":"https://i.discogs.com/_poVlVA9MnkyhPABtG-QJkpWlraOOsY-_vytOhcV8S8/rs:fit/g:sm/q:90/h:600/w:595/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2NTQ5/MzQ5LTE3NzE5MjQ1/NTYtNTk2MS5qcGVn.jpeg","ean":"6 02577 07737 1","qty":2},{"id":264,"title":"Silver Lining","artist":"Adi Oasis","label":"Unity Group","prijs":27.99,"inkoop":17.49,"genres":["Electro","Soul"],"cover":"https://i.discogs.com/0tVcAsncS-Ok9OtsfcXQdhnSVpQ2nBfv8afPSBWhNd4/rs:fit/g:sm/q:90/h:586/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2NTIw/MzMzLTE3NzEyNDM5/MDctMzU4NS5qcGVn.jpeg","ean":"3 516628 507168","qty":6},{"id":265,"title":"Saudade = \u30b5\u30c0\u30fc\u30b8","artist":"Masayoshi Takanaka, Masayoshi Takanaka","label":"Universal Music","prijs":40.99,"inkoop":25.62,"genres":["Electro"],"cover":"https://i.discogs.com/Lo3eUxNzEB92c1IqzLKqXjnqS389mdORDoDyhorEZGw/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2ODUy/NTI2LTE3NzQ0MDI2/ODctODk0NC5qcGVn.jpeg","ean":"4988031820681","qty":6},{"id":266,"title":"Can I Sing?","artist":"Masayoshi Takanaka","label":"Universal Music","prijs":40.99,"inkoop":25.62,"genres":["Electro","Jazz"],"cover":"https://i.discogs.com/JxHFoBRggXteEIclcPC-hSxel-9dcMnFtcv0xzO_4kg/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2ODUy/NzkwLTE3NzQ0MDI4/NzgtODgzMC5qcGVn.jpeg","ean":"4988031820698","qty":3},{"id":267,"title":"Kurtis Blow Collected","artist":"Kurtis Blow","label":"Universal Music","prijs":13.99,"inkoop":8.74,"genres":["RAP / HIP HOP"],"cover":"https://i.discogs.com/JFVeZbMxWAcG2oHkSKjnLKahXxeegsMjt1Lzlc5Tf7w/rs:fit/g:sm/q:90/h:600/w:599/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMxMTc3/MzE1LTE3NzIzNTI3/MDItNjc1Mi5qcGVn.jpeg","ean":"0 600753 990742","qty":1},{"id":268,"title":"24 Hours","artist":"Son Mieux","label":"Universal Music","prijs":32.99,"inkoop":20.62,"genres":["Pop"],"cover":"https://i.discogs.com/f44_xsiFLMYUnRw2e74JJXoiLRSayaxgGoLRBAsTLzw/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM3MDQ4/NTMwLTE3NzYwMTY3/NzItODczOS5qcGVn.jpeg","ean":"0 199957 260060","qty":2},{"id":269,"title":"Everybody Loves The Sunshine","artist":"Roy Ayers Ubiquity","label":"Vampi Soul","prijs":34.99,"inkoop":21.87,"genres":["Funk","Jazz"],"cover":"https://i.discogs.com/qdrVzQ47_fhF45mCYF21cL0Kti7TemBRAU5x15wN1LA/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0Mjg2/MjAwLTE3ODEwMjI2/MzktNDMxMS5qcGVn.jpeg","ean":"0 602488 520850","qty":4},{"id":270,"title":"Chick-A-Boom","artist":"Joe Bataan","label":"Vampi Soul","prijs":13.99,"inkoop":8.74,"genres":["Funk","Latin"],"cover":"https://i.discogs.com/HQDfF_OYXS12yKUWf8EdRC7nh_RGpql3IH7f6GBOAeM/rs:fit/g:sm/q:90/h:600/w:598/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMwMzQ5/MzUyLTE3MTI2NzMx/ODAtMjg1Mi5qcGVn.jpeg","ean":"8435008864736","qty":2},{"id":271,"title":"World Music Radio","artist":"Jon Batiste","label":"Verve Records","prijs":20.99,"inkoop":13.12,"genres":["Jazz","Latin","Neo-Soul","Pop","Soul"],"cover":"https://i.discogs.com/P1ofF4fAsX_YnRJoc_T_cf-nizrX25N5CItboC722Lg/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMwNDI0/OTU1LTE3MzQ4MTAw/MzEtMTA4Ny5qcGVn.jpeg","ean":"602455822901","qty":4},{"id":272,"title":"You've Got To Learn","artist":"Nina Simone","label":"Verve Records","prijs":16.99,"inkoop":10.62,"genres":["Jazz"],"cover":"https://i.discogs.com/QI0lX2ixymNWTSN29mu24kLjV2wi6YSNsrNp0-cjYoI/rs:fit/g:sm/q:90/h:586/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI3NzYy/MjcwLTE2OTAxMzQ1/ODEtOTA4MC5qcGVn.jpeg","ean":"602455663986","qty":2},{"id":273,"title":"Bad But Beautiful","artist":"Eartha Kitt","label":"Verve Records","prijs":24.99,"inkoop":15.62,"genres":["Jazz","Pop"],"cover":"https://i.discogs.com/4s9tFenNyaUb7OQRl-VcKpzx5vu5n7nlR04f6Oc8SoY/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI3MzM4/MjcxLTE2ODY2MDgw/OTYtMTc4MC5qcGVn.jpeg","ean":"602448997463","qty":2},{"id":274,"title":"What's Going On","artist":"Marvin Gaye","label":"Vinyl Lovers","prijs":23.99,"inkoop":14.99,"genres":["Soul"],"cover":"https://i.discogs.com/83mfAM4RSWfGPuVmW_x03GZOiwvex1dxhL4VmveW1vI/rs:fit/g:sm/q:90/h:590/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQ1MDk0/NjMtMTY3MDIyMTE2/MC0zNTEzLmpwZWc.jpeg","ean":"8013252990427","qty":1},{"id":275,"title":"Live At The Jazz Cafe, London (The Complete Show)","artist":"D'Angelo","label":"Virgin","prijs":56.99,"inkoop":35.62,"genres":["Jazz","Soul"],"cover":"https://i.discogs.com/p1wI-yzrLjy0UA9R4IZsJoxXfP3vwLgqM4BEC9l2ooU/rs:fit/g:sm/q:90/h:598/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTc4MzUw/MjYtMTQ0OTc5MDcz/NC03NTk2LmpwZWc.jpeg","ean":"602547573421","qty":3},{"id":276,"title":"Eternal","artist":"Barney Artist, Mr Jukes","label":"Virgin","prijs":12.99,"inkoop":8.12,"genres":["Jazz","RAP / HIP HOP"],"cover":"https://i.discogs.com/CudNL93bDT1_khQqgVVXLBQ20iPsvZkkOv1oQUE0e5U/rs:fit/g:sm/q:90/h:600/w:596/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI0Njk0/OTQzLTE2NjQ3MDE3/ODAtOTc1MC5wbmc.jpeg","ean":"6 02448 04870 7","qty":1},{"id":277,"title":"Man","artist":"Neneh Cherry","label":"Virgin EMI Records","prijs":18.99,"inkoop":11.87,"genres":["Electro"],"cover":"https://i.discogs.com/4SAjR7lD8w8dCwU-8GcHqsg91DXeiLfqZxc7rCD_wgc/rs:fit/g:sm/q:90/h:600/w:583/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI4NTgx/NTc3LTE2OTcyMzAy/NTAtNTIyMC5qcGVn.jpeg","ean":"6 02455 99742 5","qty":3},{"id":278,"title":"5","artist":"Lenny Kravitz","label":"Virgin","prijs":26.99,"inkoop":16.87,"genres":[],"cover":"https://i.discogs.com/kPovy9egPwZ-Ytqt5wvlwRbHdj43SYgbyukbJ6uKcEM/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM1ODM4/ODM1LTE3NjQ4NTQz/NDAtNTU2NC5qcGVn.jpeg","ean":"602567581925","qty":1},{"id":279,"title":"In Return","artist":"Shola Ama","label":"Warner Music UK Ltd.","prijs":18.99,"inkoop":11.87,"genres":["Pop","R&B"],"cover":"https://i.discogs.com/kRKi8ZchJREDNKNQ4P_upJF3x9bvLfJCVupB1hefWrE/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0NTky/ODU0LTE3NTMwMjU2/MzYtMTg2OC5qcGVn.jpeg","ean":"5021732257581","qty":1},{"id":280,"title":"Chaka","artist":"Chaka Khan","label":"Warner Records","prijs":30.99,"inkoop":19.37,"genres":["Soul"],"cover":"https://i.discogs.com/2bzqs3G8JhDW4uJ_YBEiz2F5ZWsSor4ZMRhpoZiwhVQ/rs:fit/g:sm/q:90/h:600/w:581/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM1MDE2/MzA4LTE3NjMzODYy/NDctNTEyNS5qcGVn.jpeg","ean":"6 03497 83108 1","qty":1},{"id":281,"title":"Ballads","artist":"The John Coltrane Quartet","label":"WaxTime","prijs":16.99,"inkoop":10.62,"genres":["Jazz"],"cover":"https://i.discogs.com/XEclLjyR-UEIsYmURBolJAkqbam3EfTxwRURdaaIwHo/rs:fit/g:sm/q:90/h:600/w:597/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTQ1MTI2/NjgtMTQ5NTczNDg0/My0yMTA4LmpwZWc.jpeg","ean":"8 436542 012416","qty":1},{"id":282,"title":"Confirmation","artist":"Jimmy Smith","label":"WaxTime","prijs":16.99,"inkoop":10.62,"genres":["Jazz"],"cover":"https://i.discogs.com/2UwnZmM3-vdBZFMiRMjriddEdZyPlyfdebX09WGptvc/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTcxOTg4/MjctMTQzNTk2NzU5/NS03OTk3LmpwZWc.jpeg","ean":"8 436542 017480","qty":2},{"id":283,"title":"Super-Sonic Jazz","artist":"Sun Ra","label":"WaxTime","prijs":16.99,"inkoop":10.62,"genres":["Jazz"],"cover":"https://i.discogs.com/Eu4OqbhcFbRP-i_n0u5g4QD2br1Kgxuv8UzvaqI--r0/rs:fit/g:sm/q:90/h:450/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTIzMDY2/NDA1LTE3NzE2MDkw/ODQtOTg0MS5qcGVn.jpeg","ean":"8435723702061","qty":5},{"id":284,"title":"Blue Train","artist":"John Coltrane","label":"Waxtime Clear Vinyl","prijs":19.99,"inkoop":12.49,"genres":["Jazz"],"cover":"https://i.discogs.com/dQUOum04cftuQp6f4YE7cu90Hya6BQ8dkg3JI_6P7Co/rs:fit/g:sm/q:90/h:500/w:500/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0MjU2/NTUxLTE3NDk4MTg0/MTItNDExMC5qcGVn.jpeg","ean":"8435723701743","qty":2},{"id":285,"title":"Moanin'","artist":"Art Blakey & The Jazz Messengers","label":"Waxtime Clear Vinyl","prijs":19.99,"inkoop":12.49,"genres":["Jazz"],"cover":"https://i.discogs.com/6wcooDc7vMtmVbnoiuTpQSQxC1hltoS75a7oac7tblg/rs:fit/g:sm/q:90/h:600/w:594/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM1Nzky/NjY1LTE3NjQzOTQ5/NjgtMzYxMy5qcGVn.jpeg","ean":"8 435723 701927","qty":1},{"id":286,"title":"Monk\u2019s Dream","artist":"The Thelonious Monk Quartet","label":"WaxTime In Color","prijs":19.99,"inkoop":12.49,"genres":["Jazz"],"cover":"https://i.discogs.com/Iici4mfILwY7BwAcCd88Cc2XuJV912KmJmM-rDuco6U/rs:fit/g:sm/q:90/h:599/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTExNzg2/MTkyLTE1MjIzNTc3/MTctNTkyNC5qcGVn.jpeg","ean":"8436559463973","qty":2},{"id":287,"title":"Free Your Mind And Your Ass Will Follow","artist":"Funkadelic","label":"Westbound Records","prijs":41.99,"inkoop":26.24,"genres":["Funk"],"cover":"https://i.discogs.com/EkVUXiTnpfzzCEVt1IKIC5GmOL2Iamo0gkjbq6h8c78/rs:fit/g:sm/q:90/h:599/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM3MjEy/MDMzLTE3Nzk0NTEz/OTYtMTIzMi5qcGVn.jpeg","ean":"7 11574 97861 8","qty":1},{"id":288,"title":"Funkadelic","artist":"Funkadelic","label":"Westbound Records","prijs":40.99,"inkoop":25.62,"genres":["Funk"],"cover":"https://i.discogs.com/6njR2aoeE9tBr4jcknUJfUDCwccQjNvTD19uf-Q1nlg/rs:fit/g:sm/q:90/h:600/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM0OTM3/ODI4LTE3NTYzMDg1/NjktNDg4MS5qcGVn.jpeg","ean":"7 11574 96731 5","qty":2},{"id":289,"title":"The Garden","artist":"Ginton","label":"Woody Trees","prijs":29.99,"inkoop":18.74,"genres":["Afrobeat","Electro","Jazz"],"cover":"","ean":"8717931353588","qty":1},{"id":290,"title":"Green","artist":"Ali Farka Tour\u00e9","label":"World Circuit","prijs":24.99,"inkoop":15.62,"genres":["Folk"],"cover":"https://i.discogs.com/CU4NfDxc47xyOgvL1Dsim4PD83k-ErY-khKlHH4l5Io/rs:fit/g:sm/q:90/h:591/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI5NjE1/NzczLTE3NDcyNjA2/MTUtMzgzMS5qcGVn.jpeg","ean":"4 050538 966046","qty":1},{"id":291,"title":"Lahai","artist":"Sampha","label":"Young (5)","prijs":26.99,"inkoop":16.87,"genres":["Electro","Soul"],"cover":"https://i.discogs.com/aKtSiqmkp6h5m2bUL-kPtB0XHuqwArBI6KAyRFTknJs/rs:fit/g:sm/q:90/h:586/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTI4NjQx/MTgxLTE2OTc3NTIw/OTQtNDU2Mi5qcGVn.jpeg","ean":"889030031204","qty":1},{"id":292,"title":"Fearless Movement","artist":"Kamasi Washington","label":"Young (5)","prijs":16.99,"inkoop":10.62,"genres":["Jazz","RAP / HIP HOP"],"cover":"https://i.discogs.com/KRest3edA5hk7WBdbO41mE5CULsdeAlMRiGlXreSKkE/rs:fit/g:sm/q:90/h:596/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTMwNTY0/NTc3LTE3MTQ4OTk5/NTUtNDUyNC5qcGVn.jpeg","ean":"889030035011","qty":2},{"id":293,"title":"Bully","artist":"Ye","label":"YZY","prijs":31.99,"inkoop":19.99,"genres":["Electro","RAP / HIP HOP"],"cover":"https://i.discogs.com/ttrr4S8YE-3zvQmiEpMda1vfnsMq51Uiar8KNuqz3Kk/rs:fit/g:sm/q:90/h:595/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTM2ODY5/NzQ5LTE3Nzg1MDU1/NjItOTMwNC5qcGVn.jpeg","ean":"9 120005 656048","qty":4},{"id":294,"title":"Hot Rats","artist":"Frank Zappa","label":"Zappa Records","prijs":32.99,"inkoop":20.62,"genres":[],"cover":"https://i.discogs.com/FsFFmH0sPBPJ1r27aANNTJ1938O16FzaOQinc9ENY_s/rs:fit/g:sm/q:90/h:589/w:600/czM6Ly9kaXNjb2dz/LWRhdGFiYXNlLWlt/YWdlcy9SLTg5NTI2/NDQtMTUxNzY0NTk3/Ny00NDMyLmpwZWc.jpeg","ean":"8 24302 38411 4","qty":1}];
+function loadCollectie(){
+  if(S.collectie.length)return;
+  S.collectie = SHOPIFY_COLLECTIE;
+}
+
+// ── SALES DATA ───────────────────────
+function loadSalesData(){
+  if(S.transacties.length)return;
+  const raw=[
+    {d:'2026-06-01',a:'Yussef Dayes & Tom Misch - What Kinda Music',v:29,i:21},
+    {d:'2026-06-01',a:'Yussef Dayes & Tom Misch - What Kinda Music',v:31.50,i:21},
+    {d:'2026-06-01',a:'Bundle 3 Nujabes',v:200,i:130},
+    {d:'2026-06-01',a:'Glass Beams - Mahal',v:25,i:17.70},
+    {d:'2026-06-01',a:'Jorge Ben - From Brasil',v:19,i:11.25},
+    {d:'2026-06-01',a:'Buena Vista Social Club',v:35,i:23.50},
+    {d:'2026-06-02',a:'Thee Sacred Souls - Got A Story To Tell',v:23,i:15},
+    {d:'2026-06-02',a:'The Yussef Dayes Experience - Live From Mt. Fuji',v:32,i:22.20},
+    {d:'2026-06-02',a:'Tom Misch - Geography',v:36.30,i:17.49},
+    {d:'2026-06-03',a:'Thee Sinseers - Sinseerly Soulfully',v:35,i:19.90},
+    {d:'2026-06-03',a:'Olivia Dean - Messy',v:29,i:21.50},
+    {d:'2026-06-03',a:'Glass Beams - Mahal',v:24,i:17.70},
+    {d:'2026-06-03',a:'Yussef Dayes + Khruangbin - A La Sala',v:57,i:43.60},
+    {d:'2026-06-03',a:'Olivia Dean - The Art Of Loving',v:30,i:23.50},
+    {d:'2026-06-03',a:'Sade - Love Deluxe',v:35,i:16.50},
+    {d:'2026-06-03',a:'Hermanos Gutierrez - Sonido Cosmico',v:31,i:21.50},
+    {d:'2026-06-04',a:'Hermanos Gutierrez - Sonido Cosmico',v:30,i:21.50},
+    {d:'2026-06-04',a:'Bundle 2 Nujabes',v:130,i:89.50},
+    {d:'2026-06-04',a:'Nujabes - Modal Soul',v:45,i:29.50},
+    {d:'2026-06-04',a:'Bundle diversen',v:100,i:72.25},
+    {d:'2026-06-04',a:'Art Blakey - Moanin',v:25,i:12.70},
+    {d:'2026-06-05',a:'Bundle 2 Nujabes',v:126,i:89.50},
+    {d:'2026-06-05',a:'Maxwell - Urban Hang Suite',v:45,i:27.50},
+    {d:'2026-06-05',a:'Jalen Ngonda - Doctrine of Love (colored)',v:27,i:17.25},
+    {d:'2026-06-05',a:'Mobb Deep - Infamous + Nas - Illmatic',v:48,i:32.40},
+    {d:'2026-06-06',a:'Bundle diversen',v:97,i:78.70},
+    {d:'2026-06-06',a:'Jalen Ngonda - Doctrine of Love (black)',v:23,i:15.50},
+    {d:'2026-06-06',a:'Bundle Nujabes',v:125,i:85},
+    {d:'2026-06-06',a:'Nujabes - Modal Soul',v:50,i:29.50},
+    {d:'2026-06-06',a:'Donny Hathaway - Extension Of A Man',v:25,i:14.50},
+    {d:'2026-06-07',a:'Camp Lo + Born Again + Mobb Deep',v:80,i:57.30},
+    {d:'2026-06-07',a:'Mobb Deep',v:30,i:19.90},
+    {d:'2026-06-07',a:'Jorge Ben - Jorge Ben 1969',v:21,i:13.55},
+    {d:'2026-06-07',a:'Janelle Monae - The Age Of Pleasure',v:26,i:16.25},
+    {d:'2026-06-07',a:'Bundle Khruangbin',v:43,i:31},
+    {d:'2026-06-07',a:'Bundle Khruangbin',v:48,i:32.05},
+    {d:'2026-06-08',a:'Glass Beams - Mahal',v:24,i:17.70},
+    {d:'2026-06-08',a:'Sade - Lovers Rock',v:29,i:16.50},
+    {d:'2026-06-08',a:'Nujabes - Metaphorical Music',v:50,i:38},
+    {d:'2026-06-09',a:'Marcus King - Young Blood',v:23.40,i:16.50},
+    {d:'2026-06-09',a:'Venna - Malik',v:28,i:13.75},
+    {d:'2026-06-09',a:'Bundel Takanaka',v:115,i:70},
+    {d:'2026-06-09',a:'Lenny Kravitz - 5',v:28.80,i:17},
+    {d:'2026-06-09',a:'Ryo Kawasaki - Juice',v:27,i:17},
+    {d:'2026-06-09',a:'Bundle Jazz',v:105.30,i:65.45},
+    {d:'2026-06-09',a:'Jalen Ngonda - Doctrine of Love (black)',v:25,i:15.50},
+    {d:'2026-06-09',a:'Ryo Kawasaki - Juice',v:29,i:17},
+    {d:'2026-06-09',a:'Don Blackman - Don Blackman',v:24,i:17.90},
+    {d:'2026-06-09',a:'Ghostface Killah - Ironman',v:29,i:19.90},
+    {d:'2026-06-09',a:'Bundel Donny Hathaway + Jalen Ngonda',v:43,i:30},
+    {d:'2026-06-10',a:"Bundle D'Angelo + Jazz",v:68,i:45.70},
+    {d:'2026-06-10',a:'Don Blackman - Don Blackman',v:25,i:17.90},
+    {d:'2026-06-10',a:'Don Blackman - Don Blackman',v:25,i:17.90},
+    {d:'2026-06-10',a:'Boyz II Men - Cooleyhighharmony',v:17.85,i:8.37},
+    {d:'2026-06-11',a:'El Michels Affair - 24 Hr Sports',v:20,i:13.45},
+    {d:'2026-06-11',a:'Wu-Tang Clan - Enter The Wu-Tang',v:21,i:15.50},
+    {d:'2026-06-11',a:"Asap Rocky - Don't Be Dumb",v:27,i:21.50},
+    {d:'2026-06-12',a:'Olivia Dean - The Art Of Loving',v:34,i:23.50},
+    {d:'2026-06-12',a:'Jalen Ngonda - Doctrine of Love (black)',v:23,i:15.50},
+    {d:'2026-06-12',a:'Jalen Ngonda - Doctrine of Love (colored)',v:27,i:17.25},
+    {d:'2026-06-12',a:'Raye - This Music May Contain Hope',v:35,i:25.90},
+    {d:'2026-06-13',a:'Fugees - The Score',v:26,i:19.50},
+    {d:'2026-06-13',a:'Maxwell - Urban Hang Suite + Brandy',v:63,i:46.25},
+    {d:'2026-06-13',a:'Cory Wong - Lost in the Wonder',v:28,i:18.60},
+    {d:'2026-06-13',a:'Ye - Bully',v:29,i:20.70},
+    {d:'2026-06-14',a:'Maxwell - Urban Hang Suite + Brandy',v:45,i:27.50},
+    {d:'2026-06-14',a:'Nujabes bundle',v:195,i:129},
+    {d:'2026-06-14',a:'Masayoshi Takanaka - Brasilian Skies',v:75,i:29.35},
+    {d:'2026-06-14',a:'Jorge Ben - Jorge Ben 1969',v:20.30,i:13.55},
+  ];
+  S.transacties=raw.map((r,i)=>({id:i+1,album:r.a,datum:r.d,kanaal:'Vinted',verkoop:r.v,inkoop:r.i,winst:r.v-r.i}));
+}
+
+// ── INIT ─────────────────────────────
+(function(){
+  load();
+  try{const t=localStorage.getItem('m9theme');if(t){document.documentElement.setAttribute('data-theme',t);document.getElementById('themeBtn').textContent=t==='light'?'☽':'☀';}}catch(e){}
+  loadSalesData();
+  if(S.settings.discogsToken&&S.settings.discogsUsername)updateDiscogsStatus(true);
+  renderDashboard();
+})();
+</script>
+</body>
+</html>
